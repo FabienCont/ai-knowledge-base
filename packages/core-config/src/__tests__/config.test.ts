@@ -8,7 +8,7 @@ vi.mock('dotenv', () => ({ config: vi.fn() }));
 
 // Mock loadFromFile to control what "file" is read in unit tests
 vi.mock('../file.js', () => ({
-  loadFromFile: vi.fn(async () => ({})),
+  loadFromFile: vi.fn(() => ({})),
 }));
 
 import { getConfig, resetConfig } from '../config.js';

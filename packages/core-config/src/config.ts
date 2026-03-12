@@ -61,7 +61,7 @@ export async function getConfig(overrides?: Partial<AppConfig>): Promise<AppConf
   // 4. Deep-merge: defaults ← file ← env ← overrides
   const defaults = AppConfigSchema.parse({});
   const merged = deepMerge(
-    deepMerge(deepMerge(defaults, fileConfig as Partial<AppConfig>), envConfig as Partial<AppConfig>),
+    deepMerge(deepMerge(defaults, fileConfig), envConfig as Partial<AppConfig>),
     overrides ?? {},
   );
 
