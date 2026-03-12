@@ -143,7 +143,7 @@ Models are stored in `~/.cache/huggingface/hub/` (HF default). Progress bars sho
 | ✅ | B | Core Types | Shared types + Zod schemas used across all packages | [subplan-b-core-types.md](docs/plan/subplan-b-core-types.md) | — |
 | ✅ | C | Core Config | Unified config loading (CLI flags → env → file) | [subplan-c-core-config.md](docs/plan/subplan-c-core-config.md) | — |
 | ✅ | D | Core FS Scan | Recursive folder scanner with ignore rules | [subplan-d-core-fs-scan.md](docs/plan/subplan-d-core-fs-scan.md) | 2026-03-12 |
-| ⬜ | E | Core Chunking | Text splitting with metadata and hashing | [subplan-e-core-chunking.md](docs/plan/subplan-e-core-chunking.md) | |
+| ✅ | E | Core Chunking | Text splitting with metadata and hashing | [subplan-e-core-chunking.md](docs/plan/subplan-e-core-chunking.md) | 2026-03-12 |
 | ⬜ | F | Core Embeddings | Provider-agnostic embedding (local HF default) | [subplan-f-core-embeddings.md](docs/plan/subplan-f-core-embeddings.md) | |
 | ⬜ | G | Session Memory | Flat-text per-session memory store | [subplan-g-session-memory.md](docs/plan/subplan-g-session-memory.md) | |
 | ⬜ | H | Vector Store | Qdrant adapter for vector upsert/query | [subplan-h-vector-store.md](docs/plan/subplan-h-vector-store.md) | |
