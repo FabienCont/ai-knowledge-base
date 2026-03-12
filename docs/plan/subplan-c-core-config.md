@@ -1,4 +1,4 @@
-# ⬜ Subplan C — Core Config
+# ✅ Subplan C — Core Config
 
 ## Overview
 
@@ -15,7 +15,7 @@ Implement a unified configuration loader (`@aikb/core-config`) that merges setti
 
 ## Detailed Tasks
 
-### C1 ⬜ Package scaffold
+### C1 ✅ Package scaffold
 
 - Create `packages/core-config/` using the Subplan A template
 - Package name: `@aikb/core-config`
@@ -24,7 +24,7 @@ Implement a unified configuration loader (`@aikb/core-config`) that merges setti
   - `dotenv ^16.4`
   - `@aikb/core-types workspace:*`
 
-### C2 ⬜ Config schema definition
+### C2 ✅ Config schema definition
 
 Define the full Zod schema in `src/schema.ts`:
 
@@ -108,7 +108,7 @@ export type SessionConfig = z.infer<typeof SessionConfigSchema>;
 export type ScanConfig = z.infer<typeof ScanConfigSchema>;
 ```
 
-### C3 ⬜ Environment variable mapping
+### C3 ✅ Environment variable mapping
 
 Define `src/env.ts` — maps env vars to config keys:
 
@@ -134,7 +134,7 @@ export function loadFromEnv(): Partial<Record<string, unknown>> {
 }
 ```
 
-### C4 ⬜ Config file loading
+### C4 ✅ Config file loading
 
 Support `aikb.config.json` (or `aikb.config.js`) at the project root or a path specified by `AIKB_CONFIG_FILE`:
 
@@ -147,7 +147,7 @@ export async function loadFromFile(configPath?: string): Promise<Partial<AppConf
 - Parse JSON directly; for JS files use dynamic `import()`
 - On parse error, throw a descriptive `ConfigError`
 
-### C5 ⬜ Config merger & singleton
+### C5 ✅ Config merger & singleton
 
 ```ts
 // src/config.ts
@@ -176,7 +176,7 @@ Deep merge strategy:
 - Arrays are replaced (not appended)
 - `undefined` values are skipped
 
-### C6 ⬜ Error handling
+### C6 ✅ Error handling
 
 ```ts
 // src/errors.ts
@@ -190,7 +190,7 @@ export class ConfigError extends Error {
 
 Wrap Zod validation errors: provide human-readable messages listing each invalid field.
 
-### C7 ⬜ Unit tests
+### C7 ✅ Unit tests
 
 `src/__tests__/config.test.ts`:
 
@@ -244,13 +244,13 @@ packages/core-config/
 
 ## Acceptance Criteria
 
-- [ ] `pnpm --filter @aikb/core-config build` succeeds
-- [ ] `pnpm --filter @aikb/core-config test` passes — all source paths tested
-- [ ] `getConfig()` returns defaults when no env or file is present
-- [ ] Setting `AIKB_EMBEDDING_PROVIDER=openai` results in `config.embedding.provider === 'openai'`
-- [ ] A `aikb.config.json` file overrides defaults correctly
-- [ ] Invalid config (e.g., unknown provider) throws `ConfigError` with a field-level message
-- [ ] `resetConfig()` allows tests to use fresh configs
+- [x] `pnpm --filter @aikb/core-config build` succeeds
+- [x] `pnpm --filter @aikb/core-config test` passes — all source paths tested
+- [x] `getConfig()` returns defaults when no env or file is present
+- [x] Setting `AIKB_EMBEDDING_PROVIDER=openai` results in `config.embedding.provider === 'openai'`
+- [x] A `aikb.config.json` file overrides defaults correctly
+- [x] Invalid config (e.g., unknown provider) throws `ConfigError` with a field-level message
+- [x] `resetConfig()` allows tests to use fresh configs
 
 ---
 
