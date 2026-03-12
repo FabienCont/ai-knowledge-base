@@ -1,0 +1,15 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core-types" },
+    { "path": "packages/core-config" },
+    { "path": "packages/core-fs-scan" },
+    { "path": "packages/core-chunking" },
+    { "path": "packages/core-embeddings" },
+    { "path": "packages/session-memory" },
+    { "path": "packages/vector-store" },
+    { "path": "packages/graph-store" },
+    { "path": "apps/cli" },
+    { "path": "apps/mcp-server" }
+  ]
+}
