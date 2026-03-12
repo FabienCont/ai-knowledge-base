@@ -1,4 +1,4 @@
-# ⬜ Subplan B — Core Types
+# ✅ Subplan B — Core Types
 
 ## Overview
 
@@ -14,14 +14,14 @@ Define the canonical TypeScript types and Zod schemas used by every package in t
 
 ## Detailed Tasks
 
-### B1 ⬜ Package scaffold
+### B1 ✅ Package scaffold
 
 - Create `packages/core-types/` using the template from Subplan A
 - `package.json` name: `@aikb/core-types`
 - Runtime dependency: `zod ^3.22`
 - No other runtime dependencies
 
-### B2 ⬜ Document type
+### B2 ✅ Document type
 
 Represents a single ingested file before chunking.
 
@@ -49,7 +49,7 @@ Factory:
 export function createDocument(fields: Omit<Document, 'id' | 'ingested_at'>): Document;
 ```
 
-### B3 ⬜ Chunk type
+### B3 ✅ Chunk type
 
 Represents a subsection of a Document.
 
@@ -73,7 +73,7 @@ export type Chunk = z.infer<typeof ChunkSchema>;
 
 Factory: `createChunk(fields: Omit<Chunk, 'id'>): Chunk`
 
-### B4 ⬜ Query & result types
+### B4 ✅ Query & result types
 
 ```ts
 // src/types/query.ts
@@ -99,7 +99,7 @@ export const QueryResultSchema = z.object({
 export type QueryResult = z.infer<typeof QueryResultSchema>;
 ```
 
-### B5 ⬜ SessionEntry type
+### B5 ✅ SessionEntry type
 
 ```ts
 // src/types/session.ts
@@ -123,7 +123,7 @@ export const SessionMetaSchema = z.object({
 export type SessionMeta = z.infer<typeof SessionMetaSchema>;
 ```
 
-### B6 ⬜ Entity & Relation types (for graph store)
+### B6 ✅ Entity & Relation types (for graph store)
 
 ```ts
 // src/types/graph.ts
@@ -150,7 +150,7 @@ export const RelationSchema = z.object({
 export type Relation = z.infer<typeof RelationSchema>;
 ```
 
-### B7 ⬜ FileEntry type (for fs-scan)
+### B7 ✅ FileEntry type (for fs-scan)
 
 ```ts
 // src/types/fs.ts
@@ -164,7 +164,7 @@ export const FileEntrySchema = z.object({
 export type FileEntry = z.infer<typeof FileEntrySchema>;
 ```
 
-### B8 ⬜ Barrel exports
+### B8 ✅ Barrel exports
 
 `src/index.ts` re-exports all types and schemas:
 ```ts
@@ -176,7 +176,7 @@ export * from './types/graph.js';
 export * from './types/fs.js';
 ```
 
-### B9 ⬜ Unit tests
+### B9 ✅ Unit tests
 
 Test file: `src/__tests__/schemas.test.ts`
 
@@ -232,11 +232,11 @@ packages/core-types/
 
 ## Acceptance Criteria
 
-- [ ] `pnpm --filter @aikb/core-types build` succeeds — emits ESM + CJS + `.d.ts`
-- [ ] `pnpm --filter @aikb/core-types test` passes with 100% coverage on schema validators
-- [ ] All types are importable as `import { Document } from '@aikb/core-types'`
-- [ ] Invalid data is rejected by Zod with descriptive error messages
-- [ ] No runtime imports beyond `zod` (keep bundle tiny)
+- [x] `pnpm --filter @aikb/core-types build` succeeds — emits ESM + CJS + `.d.ts`
+- [x] `pnpm --filter @aikb/core-types test` passes with 100% coverage on schema validators
+- [x] All types are importable as `import { Document } from '@aikb/core-types'`
+- [x] Invalid data is rejected by Zod with descriptive error messages
+- [x] No runtime imports beyond `zod` (keep bundle tiny)
 
 ---
 
