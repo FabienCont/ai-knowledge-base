@@ -1,4 +1,4 @@
-# ⬜ Subplan A — Monorepo Foundation
+# ✅ Subplan A — Monorepo Foundation
 
 ## Overview
 
@@ -14,7 +14,7 @@ Set up the pnpm monorepo skeleton that all other subplans build upon. This inclu
 
 ## Detailed Tasks
 
-### A1 ⬜ Initialize repository & Node version
+### A1 ✅ Initialize repository & Node version
 
 - Create `.nvmrc` with content `20`
 - Confirm `node --version` ≥ 20 in CI
@@ -30,7 +30,7 @@ Set up the pnpm monorepo skeleton that all other subplans build upon. This inclu
   .DS_Store
   ```
 
-### A2 ⬜ pnpm workspace
+### A2 ✅ pnpm workspace
 
 - Create `pnpm-workspace.yaml`:
   ```yaml
@@ -70,7 +70,7 @@ Set up the pnpm monorepo skeleton that all other subplans build upon. This inclu
   }
   ```
 
-### A3 ⬜ TypeScript base config
+### A3 ✅ TypeScript base config
 
 - Create `tsconfig.base.json` at repo root:
   ```json
@@ -116,7 +116,7 @@ Set up the pnpm monorepo skeleton that all other subplans build upon. This inclu
   }
   ```
 
-### A4 ⬜ ESLint + Prettier
+### A4 ✅ ESLint + Prettier
 
 - Create `.eslintrc.cjs`:
   ```js
@@ -148,7 +148,7 @@ Set up the pnpm monorepo skeleton that all other subplans build upon. This inclu
   }
   ```
 
-### A5 ⬜ Vitest workspace config
+### A5 ✅ Vitest workspace config
 
 - Create `vitest.workspace.ts` at repo root:
   ```ts
@@ -175,7 +175,7 @@ Set up the pnpm monorepo skeleton that all other subplans build upon. This inclu
   });
   ```
 
-### A6 ⬜ Package template
+### A6 ✅ Package template
 
 Create a reusable template for every package under `packages/*`. Each package needs:
 
@@ -227,7 +227,7 @@ packages/<name>/
 }
 ```
 
-### A7 ⬜ Optional Turborepo
+### A7 ⬜ Optional Turborepo (skipped)
 
 - If build caching is desired: `pnpm add -Dw turbo`
 - Create `turbo.json`:
@@ -244,7 +244,7 @@ packages/<name>/
   ```
 - Update root scripts to use `turbo run build` etc.
 
-### A8 ⬜ Stub all packages
+### A8 ✅ Stub all packages
 
 Create placeholder `src/index.ts` for every package/app defined in the workspace (so `pnpm -r build` succeeds end-to-end):
 
@@ -284,12 +284,12 @@ No runtime exports — this subplan is pure tooling configuration.
 
 ## Acceptance Criteria
 
-- [ ] `pnpm install` completes without errors
-- [ ] `pnpm -r build` compiles all packages successfully
-- [ ] `pnpm -r test` runs (even with zero tests — just must not crash)
-- [ ] `pnpm lint` reports no errors on the stub files
-- [ ] `pnpm typecheck` passes with `--build`
-- [ ] Each package stub produces `dist/index.js`, `dist/index.cjs`, `dist/index.d.ts`
+- [x] `pnpm install` completes without errors
+- [x] `pnpm -r build` compiles all packages successfully
+- [x] `pnpm -r test` runs (even with zero tests — just must not crash)
+- [x] `pnpm lint` reports no errors on the stub files
+- [x] `pnpm typecheck` passes with `--build`
+- [x] Each package stub produces `dist/index.js`, `dist/index.cjs`, `dist/index.d.ts`
 
 ---
 
