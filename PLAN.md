@@ -137,20 +137,20 @@ Models are stored in `~/.cache/huggingface/hub/` (HF default). Progress bars sho
 
 ## Subplan Table
 
-| Status | ID | Name | Description | File |
-|--------|----|------|-------------|------|
-| ✅ | A | Monorepo Foundation | pnpm workspace, tsconfig, build, lint, vitest | [subplan-a-monorepo-foundation.md](docs/plan/subplan-a-monorepo-foundation.md) |
-| ✅ | B | Core Types | Shared types + Zod schemas used across all packages | [subplan-b-core-types.md](docs/plan/subplan-b-core-types.md) |
-| ✅ | C | Core Config | Unified config loading (CLI flags → env → file) | [subplan-c-core-config.md](docs/plan/subplan-c-core-config.md) |
-| ⬜ | D | Core FS Scan | Recursive folder scanner with ignore rules | [subplan-d-core-fs-scan.md](docs/plan/subplan-d-core-fs-scan.md) |
-| ⬜ | E | Core Chunking | Text splitting with metadata and hashing | [subplan-e-core-chunking.md](docs/plan/subplan-e-core-chunking.md) |
-| ⬜ | F | Core Embeddings | Provider-agnostic embedding (local HF default) | [subplan-f-core-embeddings.md](docs/plan/subplan-f-core-embeddings.md) |
-| ⬜ | G | Session Memory | Flat-text per-session memory store | [subplan-g-session-memory.md](docs/plan/subplan-g-session-memory.md) |
-| ⬜ | H | Vector Store | Qdrant adapter for vector upsert/query | [subplan-h-vector-store.md](docs/plan/subplan-h-vector-store.md) |
-| ⬜ | I | Graph Store | Neo4j adapter + LLM entity/relation extraction | [subplan-i-graph-store.md](docs/plan/subplan-i-graph-store.md) |
-| ⬜ | J | CLI App | `aikb` CLI with all subcommands | [subplan-j-cli.md](docs/plan/subplan-j-cli.md) |
-| ⬜ | K | MCP Server | MCP server exposing all tools | [subplan-k-mcp-server.md](docs/plan/subplan-k-mcp-server.md) |
-| ⬜ | L | Docker + Docs | docker-compose, getting started, architecture docs | [subplan-l-docker-integration-docs.md](docs/plan/subplan-l-docker-integration-docs.md) |
+| Status | ID | Name | Description | File | Completed |
+|--------|----|------|-------------|------|-----------|
+| ✅ | A | Monorepo Foundation | pnpm workspace, tsconfig, build, lint, vitest | [subplan-a-monorepo-foundation.md](docs/plan/subplan-a-monorepo-foundation.md) | — |
+| ✅ | B | Core Types | Shared types + Zod schemas used across all packages | [subplan-b-core-types.md](docs/plan/subplan-b-core-types.md) | — |
+| ✅ | C | Core Config | Unified config loading (CLI flags → env → file) | [subplan-c-core-config.md](docs/plan/subplan-c-core-config.md) | — |
+| ✅ | D | Core FS Scan | Recursive folder scanner with ignore rules | [subplan-d-core-fs-scan.md](docs/plan/subplan-d-core-fs-scan.md) | 2026-03-12 |
+| ⬜ | E | Core Chunking | Text splitting with metadata and hashing | [subplan-e-core-chunking.md](docs/plan/subplan-e-core-chunking.md) | |
+| ⬜ | F | Core Embeddings | Provider-agnostic embedding (local HF default) | [subplan-f-core-embeddings.md](docs/plan/subplan-f-core-embeddings.md) | |
+| ⬜ | G | Session Memory | Flat-text per-session memory store | [subplan-g-session-memory.md](docs/plan/subplan-g-session-memory.md) | |
+| ⬜ | H | Vector Store | Qdrant adapter for vector upsert/query | [subplan-h-vector-store.md](docs/plan/subplan-h-vector-store.md) | |
+| ⬜ | I | Graph Store | Neo4j adapter + LLM entity/relation extraction | [subplan-i-graph-store.md](docs/plan/subplan-i-graph-store.md) | |
+| ⬜ | J | CLI App | `aikb` CLI with all subcommands | [subplan-j-cli.md](docs/plan/subplan-j-cli.md) | |
+| ⬜ | K | MCP Server | MCP server exposing all tools | [subplan-k-mcp-server.md](docs/plan/subplan-k-mcp-server.md) | |
+| ⬜ | L | Docker + Docs | docker-compose, getting started, architecture docs | [subplan-l-docker-integration-docs.md](docs/plan/subplan-l-docker-integration-docs.md) | |
 
 ---
 

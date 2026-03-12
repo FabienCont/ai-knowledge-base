@@ -1,4 +1,4 @@
-# ⬜ Subplan D — Core FS Scan
+# ✅ Subplan D — Core FS Scan
 
 ## Overview
 
@@ -15,7 +15,7 @@ Implement a recursive, configurable file-system scanner (`@aikb/core-fs-scan`) t
 
 ## Detailed Tasks
 
-### D1 ⬜ Package scaffold
+### D1 ✅ Package scaffold
 
 - Create `packages/core-fs-scan/` using the Subplan A template
 - Package name: `@aikb/core-fs-scan`
@@ -25,7 +25,7 @@ Implement a recursive, configurable file-system scanner (`@aikb/core-fs-scan`) t
   - `micromatch ^4.0` — glob matching for include/exclude
 - Dev dependencies: `tmp-promise ^3.0` (for test temp dirs)
 
-### D2 ⬜ ScanOptions interface
+### D2 ✅ ScanOptions interface
 
 ```ts
 // src/types.ts
@@ -64,7 +64,7 @@ export const DEFAULT_IGNORE = [
 ];
 ```
 
-### D3 ⬜ GitignoreManager
+### D3 ✅ GitignoreManager
 
 ```ts
 // src/gitignore.ts
@@ -85,7 +85,7 @@ export class GitignoreManager {
 - Cache per-directory to avoid re-reading on every file.
 - Walk up the directory tree to check parent `.gitignore` files (up to root).
 
-### D4 ⬜ Core `scanFolder` function
+### D4 ✅ Core `scanFolder` function
 
 ```ts
 // src/scanner.ts
@@ -117,7 +117,7 @@ Implementation details:
 
 > **Note on sorting**: To keep output deterministic, collect all entries in a directory before yielding them sorted. This trades some memory for determinism — acceptable for typical codebases.
 
-### D5 ⬜ File metadata extraction
+### D5 ✅ File metadata extraction
 
 ```ts
 // src/metadata.ts
@@ -138,7 +138,7 @@ Fields:
 - `modified_at`: from `stat.mtime.toISOString()`
 - `extension`: `path.extname(absolutePath)` (includes dot, e.g. `.ts`)
 
-### D6 ⬜ Unit tests
+### D6 ✅ Unit tests
 
 `src/__tests__/scanner.test.ts`:
 
@@ -188,15 +188,15 @@ packages/core-fs-scan/
 
 ## Acceptance Criteria
 
-- [ ] `pnpm --filter @aikb/core-fs-scan build` succeeds
-- [ ] `pnpm --filter @aikb/core-fs-scan test` passes all cases
-- [ ] Scanner yields `FileEntry` objects sorted deterministically by `relative_path`
-- [ ] `.gitignore` files in scanned directories are respected
-- [ ] `node_modules`, `.git`, `dist` are excluded by default
-- [ ] Handles 10 000+ file trees without crashing or excessive memory use
-- [ ] Symlinks are not followed by default
-- [ ] Files exceeding `maxFileSize` are skipped (not an error)
-- [ ] Inaccessible directories emit a warning and are skipped (no crash)
+- [x] `pnpm --filter @aikb/core-fs-scan build` succeeds
+- [x] `pnpm --filter @aikb/core-fs-scan test` passes all cases
+- [x] Scanner yields `FileEntry` objects sorted deterministically by `relative_path`
+- [x] `.gitignore` files in scanned directories are respected
+- [x] `node_modules`, `.git`, `dist` are excluded by default
+- [x] Handles 10 000+ file trees without crashing or excessive memory use
+- [x] Symlinks are not followed by default
+- [x] Files exceeding `maxFileSize` are skipped (not an error)
+- [x] Inaccessible directories emit a warning and are skipped (no crash)
 
 ---
 
@@ -207,3 +207,4 @@ packages/core-fs-scan/
 - Do **not** use `glob` packages that shell out or use regex — they're slower and less portable.
 - Consider streaming output: yield as entries are found (after per-directory sorting) rather than collecting everything first, to support large codebases.
 - The `relative_path` should always use forward slashes (`/`) even on Windows, for cross-platform consistency.
+
