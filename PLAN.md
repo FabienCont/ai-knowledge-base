@@ -141,7 +141,7 @@ Models are stored in `~/.cache/huggingface/hub/` (HF default). Progress bars sho
 |--------|----|------|-------------|------|
 | ✅ | A | Monorepo Foundation | pnpm workspace, tsconfig, build, lint, vitest | [subplan-a-monorepo-foundation.md](docs/plan/subplan-a-monorepo-foundation.md) |
 | ✅ | B | Core Types | Shared types + Zod schemas used across all packages | [subplan-b-core-types.md](docs/plan/subplan-b-core-types.md) |
-| ⬜ | C | Core Config | Unified config loading (CLI flags → env → file) | [subplan-c-core-config.md](docs/plan/subplan-c-core-config.md) |
+| ✅ | C | Core Config | Unified config loading (CLI flags → env → file) | [subplan-c-core-config.md](docs/plan/subplan-c-core-config.md) |
 | ⬜ | D | Core FS Scan | Recursive folder scanner with ignore rules | [subplan-d-core-fs-scan.md](docs/plan/subplan-d-core-fs-scan.md) |
 | ⬜ | E | Core Chunking | Text splitting with metadata and hashing | [subplan-e-core-chunking.md](docs/plan/subplan-e-core-chunking.md) |
 | ⬜ | F | Core Embeddings | Provider-agnostic embedding (local HF default) | [subplan-f-core-embeddings.md](docs/plan/subplan-f-core-embeddings.md) |
