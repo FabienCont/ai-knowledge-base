@@ -1,0 +1,137 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`loadAndChunk snapshot tests > sample.md fixture produces deterministic chunks 1`] = `
+{
+  "chunkCount": 7,
+  "chunkHashes": [
+    "95ece60bde07a139b26aa661a71ef4a7e28895fb52634b90a5747e0a6e500915",
+    "d3b71378f8bada335a94950ec541d4da94d889a1d0a6d0c8eafaf2e877cb0588",
+    "c2d31404c616cb69ae981414b3aa66a93984d158ab9dfb60a06962c50fcf5723",
+    "d6c7a01e126d89b298eede00b25f2bc634a5919540aaa3af1534b8f701d5e153",
+    "c553e544fe9996827a513041f8cf44bacbd24bf72598a53989d6d36a420e4928",
+    "3b2b450121039ac70603f6da214e521afb6d34710c467b9a2e6306e3c6ca73c7",
+    "a84f94b577fe947b0ec633b486e7432989dd295b8c4e8aab1497329754e40065",
+  ],
+  "documentHash": "416f2cbdc9b0ba2766559bb9a34a1107e173540b48c938c0724959b7f15096ee",
+}
+`;
+
+exports[`loadAndChunk snapshot tests > sample.ts fixture produces deterministic chunks 1`] = `
+{
+  "chunkContents": [
+    "/**
+ * Sample TypeScript fixture for chunker tests.
+ * Contains multiple functions and classes for code-aware chunking tests.
+ */
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: Date;
+}",
+    "ure for chunker tests.
+ * Contains multiple functions and classes for code-aware chunking tests.
+ */
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: Date;
+}
+
+export function formatUserName(user: UserProfile): string {
+  return \`\${user.name} <\${user.email}>\`;
+}",
+    "export function formatUserName(user: UserProfile): string {
+  return \`\${user.name} <\${user.email}>\`;
+}
+
+export function validateEmail(email: string): boolean {
+  const re = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+  return re.test(email);
+}",
+    "export function validateEmail(email: string): boolean {
+  const re = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+  return re.test(email);
+}
+
+export async function fetchUser(id: string): Promise<UserProfile | null> {
+  // Simulate async operation
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  if (!id) return null;
+  return {
+    id,
+    name: 'Test User',
+    email: 'test@example.com',
+    createdAt: new Date(),
+  };
+}",
+    "c operation
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  if (!id) return null;
+  return {
+    id,
+    name: 'Test User',
+    email: 'test@example.com',
+    createdAt: new Date(),
+  };
+}
+
+export class UserRepository {
+  private users: Map<string, UserProfile> = new Map();
+
+  add(user: UserProfile): void {
+    this.users.set(user.id, user);
+  }
+
+  get(id: string): UserProfile | undefined {
+    return this.users.get(id);
+  }
+
+  getAll(): UserProfile[] {
+    return Array.from(this.users.values());
+  }
+
+  delete(id: string): boolean {
+    return this.users.delete(id);
+  }
+}",
+    "e | undefined {
+    return this.users.get(id);
+  }
+
+  getAll(): UserProfile[] {
+    return Array.from(this.users.values());
+  }
+
+  delete(id: string): boolean {
+    return this.users.delete(id);
+  }
+}
+
+export class AdminUserRepository extends UserRepository {
+  private adminIds: Set<string> = new Set();
+
+  setAdmin(id: string): void {
+    this.adminIds.add(id);
+  }
+
+  isAdmin(id: string): boolean {
+    return this.adminIds.has(id);
+  }
+}",
+  ],
+  "chunkCount": 6,
+  "chunkHashes": [
+    "1375d07755cfd0c0c206d38b4d58a6809ddcaf55e692d5de812bc3459a78aaf8",
+    "7e38b1cf2846f86bc6f5cef6d07b8e806b41cb5d0afd18f8a5736439cb74008e",
+    "d6d7712a6de9b8e15b9a821afd3049b500d90f5801a506ab1415672e7ede3be7",
+    "86b814e98adebfa67d51241de9405de83f2af0c16a88a27336e58c1cb58a333d",
+    "cdbe4672a7f84bdb9404f43e757be85041f832c2b84b050cc8d8f6a8ac2fc095",
+    "af4b707b5b61a3551c1b67d1ead358362d2b543508b87712835e1319b9833754",
+  ],
+  "documentHash": "9019953dfaf7d44c3488cc26a2551aee1e1694e6e09c3fafd9a9fdbc5f4affc4",
+}
+`;

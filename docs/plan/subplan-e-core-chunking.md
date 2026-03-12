@@ -1,4 +1,4 @@
-# ⬜ Subplan E — Core Chunking
+# ✅ Subplan E — Core Chunking
 
 ## Overview
 
@@ -16,7 +16,7 @@ Implement the text chunking library (`@aikb/core-chunking`) that reads a file fr
 
 ## Detailed Tasks
 
-### E1 ⬜ Package scaffold
+### E1 ✅ Package scaffold
 
 - Package name: `@aikb/core-chunking`
 - Runtime dependencies:
@@ -24,7 +24,7 @@ Implement the text chunking library (`@aikb/core-chunking`) that reads a file fr
   - `@aikb/core-fs-scan workspace:*`
 - Built-in Node modules used: `node:crypto`, `node:fs/promises`, `node:path`
 
-### E2 ⬜ ChunkOptions interface
+### E2 ✅ ChunkOptions interface
 
 ```ts
 // src/types.ts
@@ -42,7 +42,7 @@ export interface ChunkOptions {
 }
 ```
 
-### E3 ⬜ Language detection
+### E3 ✅ Language detection
 
 ```ts
 // src/language.ts
@@ -73,7 +73,7 @@ Map file extensions to language identifiers:
 
 Returns `undefined` for unknown extensions.
 
-### E4 ⬜ Chunking strategies
+### E4 ✅ Chunking strategies
 
 #### Strategy 1: `fixed`
 Simple sliding window on characters:
@@ -110,7 +110,7 @@ Logic:
 - Fall back to paragraph strategy if no structural boundaries found
 - Fall back to fixed strategy if chunks are still too large
 
-### E5 ⬜ Line number tracking
+### E5 ✅ Line number tracking
 
 Compute `line_start` and `line_end` for each chunk:
 ```ts
@@ -124,7 +124,7 @@ function computeLineRange(
 - Count newlines from chunk start to chunk end → `line_end`
 - Lines are 1-indexed
 
-### E6 ⬜ SHA-256 hashing
+### E6 ✅ SHA-256 hashing
 
 ```ts
 // src/hash.ts
@@ -137,7 +137,7 @@ export function sha256(content: string): string;
 - Document hash: `sha256(fileContent)`
 - Chunk hash: `sha256(chunk.content)` — chunk text only (not metadata)
 
-### E7 ⬜ Main `loadAndChunk` function
+### E7 ✅ Main `loadAndChunk` function
 
 ```ts
 // src/chunker.ts
@@ -172,7 +172,7 @@ Steps:
    - Create `Chunk` object via `createChunk()`
 8. Return `{ document, chunks }`
 
-### E8 ⬜ Unit tests — golden snapshots
+### E8 ✅ Unit tests — golden snapshots
 
 `src/__tests__/chunker.test.ts`:
 
@@ -228,14 +228,14 @@ packages/core-chunking/
 
 ## Acceptance Criteria
 
-- [ ] `pnpm --filter @aikb/core-chunking build` succeeds
-- [ ] `pnpm --filter @aikb/core-chunking test` passes including snapshot tests
-- [ ] Same file always produces same chunks and hashes (determinism)
-- [ ] `line_start` / `line_end` are accurate (verified against test fixtures)
-- [ ] Chunks respect `maxChunkSize` (no chunk exceeds it by more than the overlap)
-- [ ] Adjacent chunks overlap by at most `overlap` characters
-- [ ] Empty files produce a `Document` with `chunks: []`
-- [ ] Binary files (detected by presence of null bytes) are skipped with a warning, not crashed on
+- [x] `pnpm --filter @aikb/core-chunking build` succeeds
+- [x] `pnpm --filter @aikb/core-chunking test` passes including snapshot tests
+- [x] Same file always produces same chunks and hashes (determinism)
+- [x] `line_start` / `line_end` are accurate (verified against test fixtures)
+- [x] Chunks respect `maxChunkSize` (no chunk exceeds it by more than the overlap)
+- [x] Adjacent chunks overlap by at most `overlap` characters
+- [x] Empty files produce a `Document` with `chunks: []`
+- [x] Binary files (detected by presence of null bytes) are skipped with a warning, not crashed on
 
 ---
 
