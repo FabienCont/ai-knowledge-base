@@ -71,7 +71,7 @@ describe('create()', () => {
   });
 
   it('writes valid meta.json', async () => {
-    const meta = await store.create({
+    await store.create({
       id: 'meta-test',
       title: 'Hello',
       tags: ['a'],
@@ -412,7 +412,7 @@ describe('concurrent add()', () => {
     const lines = raw.split('\n').filter((l) => l.trim());
     // Every line must be valid JSON
     for (const line of lines) {
-      expect(() => JSON.parse(line)).not.toThrow();
+      expect(() => { JSON.parse(line); }).not.toThrow();
     }
     // All messages were written
     expect(lines).toHaveLength(count);
