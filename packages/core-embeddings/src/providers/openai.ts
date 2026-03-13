@@ -1,3 +1,4 @@
+import OpenAI from 'openai';
 import type { EmbeddingProvider } from '../types.js';
 
 /** Mapping of supported OpenAI embedding models to their output dimensions. */
@@ -18,8 +19,7 @@ export class OpenAIProvider implements EmbeddingProvider {
   readonly name = 'openai';
   readonly dimensions: number;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private client: any;
+  private readonly client: OpenAI;
   private readonly model: string;
 
   constructor(
@@ -29,9 +29,6 @@ export class OpenAIProvider implements EmbeddingProvider {
   ) {
     this.model = model;
     this.dimensions = SUPPORTED_MODELS[model] ?? 1536;
-    // Import openai lazily so the package is optional at the module boundary.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
-    const { default: OpenAI } = require('openai') as typeof import('openai');
     this.client = new OpenAI({ apiKey, baseURL: baseUrl });
   }
 
@@ -43,7 +40,11 @@ export class OpenAIProvider implements EmbeddingProvider {
       model: this.model,
       input: text,
     });
-    return (response.data[0] as { embedding: number[] }).embedding;
+    const first = response.data[0];
+    if (!first) {
+      throw new Error(`OpenAI returned no embedding for model "${this.model}"`);
+    }
+    return first.embedding;
   }
 
   async embedBatch(texts: string[]): Promise<number[][]> {
@@ -51,8 +52,6 @@ export class OpenAIProvider implements EmbeddingProvider {
       model: this.model,
       input: texts,
     });
-    return (response.data as Array<{ embedding: number[] }>).map(
-      (d) => d.embedding,
-    );
+    return response.data.map((d) => d.embedding);
   }
 }

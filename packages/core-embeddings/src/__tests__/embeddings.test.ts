@@ -4,6 +4,7 @@ import { LocalHFProvider } from '../providers/local-hf.js';
 import { OllamaProvider } from '../providers/ollama.js';
 import { MODEL_REGISTRY, DEFAULT_MODEL, getModelInfo } from '../registry.js';
 import { makeCacheKey, CachedEmbeddingProvider } from '../cache.js';
+import type { EmbeddingCache } from '../cache.js';
 import { createEmbeddingProvider } from '../factory.js';
 import type { EmbeddingProvider } from '../types.js';
 
@@ -82,9 +83,7 @@ describe('MODEL_REGISTRY', () => {
 // ---------------------------------------------------------------------------
 vi.mock('@huggingface/transformers', () => {
   const fakePipelineFn = Object.assign(
-    async (_text: string, _opts: unknown) => ({
-      data: new Float32Array(384).fill(0.1),
-    }),
+    () => Promise.resolve({ data: new Float32Array(384).fill(0.1) }),
     { model: 'mock' },
   );
   const pipelineMock = vi.fn().mockResolvedValue(fakePipelineFn);
@@ -156,7 +155,7 @@ describe('OllamaProvider', () => {
     const fakeVec = new Array<number>(768).fill(0.5);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ embedding: fakeVec }),
+      json: () => Promise.resolve({ embedding: fakeVec }),
     }));
     const vec = await provider.embed('test');
     expect(vec).toEqual(fakeVec);
@@ -168,7 +167,7 @@ describe('OllamaProvider', () => {
     const fakeVec = [0.1, 0.2, 0.3];
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ embedding: fakeVec }),
+      json: () => Promise.resolve({ embedding: fakeVec }),
     }));
     const results = await provider.embedBatch(['a', 'b', 'c']);
     expect(results).toHaveLength(3);
@@ -255,19 +254,19 @@ describe('CachedEmbeddingProvider', () => {
       name: 'test',
       dimensions: 4,
       ensureModel: async () => {},
-      embed: async (text: string) => {
+      embed: (text: string) => {
         callCount++;
-        return [text.length, 0, 0, 0];
+        return Promise.resolve([text.length, 0, 0, 0]);
       },
-      embedBatch: async (texts: string[]) => Promise.all(texts.map((t) => inner.embed(t))),
+      embedBatch: (texts: string[]) => Promise.all(texts.map((t) => inner.embed(t))),
     };
   });
 
   it('forwards name and dimensions from inner provider', () => {
     const cache = new Map<string, number[]>();
     const cacheImpl = {
-      get: async (k: string) => cache.get(k),
-      set: async (k: string, v: number[]) => { cache.set(k, v); },
+      get: (k: string) => Promise.resolve(cache.get(k)),
+      set: (k: string, v: number[]) => { cache.set(k, v); return Promise.resolve(); },
     };
     const provider = new CachedEmbeddingProvider(inner, cacheImpl, 'model');
     expect(provider.name).toBe('test');
@@ -277,8 +276,8 @@ describe('CachedEmbeddingProvider', () => {
   it('calls inner.embed on cache miss then returns cached result on hit', async () => {
     const cache = new Map<string, number[]>();
     const cacheImpl = {
-      get: async (k: string) => cache.get(k),
-      set: async (k: string, v: number[]) => { cache.set(k, v); },
+      get: (k: string) => Promise.resolve(cache.get(k)),
+      set: (k: string, v: number[]) => { cache.set(k, v); return Promise.resolve(); },
     };
     const provider = new CachedEmbeddingProvider(inner, cacheImpl, 'model');
 
@@ -291,9 +290,9 @@ describe('CachedEmbeddingProvider', () => {
   });
 
   it('embedBatch returns one vector per input', async () => {
-    const cacheImpl = {
-      get: async (_k: string) => undefined as number[] | undefined,
-      set: async (_k: string, _v: number[]) => {},
+    const cacheImpl: EmbeddingCache = {
+      get: () => Promise.resolve(undefined),
+      set: () => Promise.resolve(),
     };
     const provider = new CachedEmbeddingProvider(inner, cacheImpl, 'model');
     const results = await provider.embedBatch(['a', 'bb', 'ccc']);

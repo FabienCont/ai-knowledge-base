@@ -12,12 +12,12 @@ export class MockEmbeddingProvider implements EmbeddingProvider {
 
   async ensureModel(): Promise<void> {}
 
-  async embed(text: string): Promise<number[]> {
+  embed(text: string): Promise<number[]> {
     const h = text.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-    return [h % 1, (h * 2) % 1, (h * 3) % 1, (h * 4) % 1];
+    return Promise.resolve([h % 1, (h * 2) % 1, (h * 3) % 1, (h * 4) % 1]);
   }
 
-  async embedBatch(texts: string[]): Promise<number[][]> {
+  embedBatch(texts: string[]): Promise<number[][]> {
     return Promise.all(texts.map((t) => this.embed(t)));
   }
 }

@@ -47,18 +47,19 @@ export class SqliteEmbeddingCache implements EmbeddingCache {
     `);
   }
 
-  async get(key: string): Promise<number[] | undefined> {
+  get(key: string): Promise<number[] | undefined> {
     const row = this.db
       .prepare<[string], { value: string }>('SELECT value FROM embeddings WHERE key = ?')
       .get(key);
-    if (!row) return undefined;
-    return JSON.parse(row.value) as number[];
+    if (!row) return Promise.resolve(undefined);
+    return Promise.resolve(JSON.parse(row.value) as number[]);
   }
 
-  async set(key: string, vector: number[]): Promise<void> {
+  set(key: string, vector: number[]): Promise<void> {
     this.db
       .prepare('INSERT OR REPLACE INTO embeddings (key, value) VALUES (?, ?)')
       .run(key, JSON.stringify(vector));
+    return Promise.resolve();
   }
 }
 
