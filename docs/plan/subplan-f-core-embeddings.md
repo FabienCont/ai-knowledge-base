@@ -1,4 +1,4 @@
-# ⬜ Subplan F — Core Embeddings
+# ✅ Subplan F — Core Embeddings
 
 ## Overview
 
@@ -16,7 +16,7 @@ Implement a provider-agnostic embedding library (`@aikb/core-embeddings`) that a
 
 ## Detailed Tasks
 
-### F1 ⬜ Package scaffold
+### F1 ✅ Package scaffold
 
 - Package name: `@aikb/core-embeddings`
 - Runtime dependencies:
@@ -27,7 +27,7 @@ Implement a provider-agnostic embedding library (`@aikb/core-embeddings`) that a
   - `openai ^4.0`
 - Dev dependencies: `vitest`, `tsup`, etc.
 
-### F2 ⬜ EmbeddingProvider interface
+### F2 ✅ EmbeddingProvider interface
 
 ```ts
 // src/types.ts
@@ -56,7 +56,7 @@ export interface EmbeddingProvider {
 }
 ```
 
-### F3 ⬜ Model registry
+### F3 ✅ Model registry
 
 ```ts
 // src/registry.ts
@@ -111,7 +111,7 @@ export const DEFAULT_MODEL = MODEL_REGISTRY.find(m => m.isDefault)!;
 export function getModelInfo(modelId: string): ModelInfo | undefined;
 ```
 
-### F4 ⬜ LocalHFProvider (default)
+### F4 ✅ LocalHFProvider (default)
 
 ```ts
 // src/providers/local-hf.ts
@@ -168,7 +168,7 @@ Key design decisions:
 - Model files cached in HuggingFace default cache dir (`~/.cache/huggingface/hub/`)
 - `normalize: true` produces unit-norm vectors suitable for cosine similarity
 
-### F5 ⬜ OpenAIProvider
+### F5 ✅ OpenAIProvider
 
 ```ts
 // src/providers/openai.ts
@@ -214,7 +214,7 @@ export class OpenAIProvider implements EmbeddingProvider {
 }
 ```
 
-### F6 ⬜ OllamaProvider
+### F6 ✅ OllamaProvider
 
 ```ts
 // src/providers/ollama.ts
@@ -250,7 +250,7 @@ export class OllamaProvider implements EmbeddingProvider {
 }
 ```
 
-### F7 ⬜ Factory function
+### F7 ✅ Factory function
 
 ```ts
 // src/factory.ts
@@ -277,7 +277,7 @@ export function createEmbeddingProvider(config: EmbeddingConfig): EmbeddingProvi
 }
 ```
 
-### F8 ⬜ Embedding cache (optional)
+### F8 ✅ Embedding cache (optional)
 
 ```ts
 // src/cache.ts
@@ -304,7 +304,7 @@ export class CachedEmbeddingProvider implements EmbeddingProvider {
 }
 ```
 
-### F9 ⬜ Mock provider for tests
+### F9 ✅ Mock provider for tests
 
 ```ts
 // src/providers/mock.ts
@@ -326,7 +326,7 @@ export class MockEmbeddingProvider implements EmbeddingProvider {
 }
 ```
 
-### F10 ⬜ Unit tests
+### F10 ✅ Unit tests
 
 `src/__tests__/embeddings.test.ts`:
 
@@ -381,12 +381,12 @@ packages/core-embeddings/
 
 ## Acceptance Criteria
 
-- [ ] `pnpm --filter @aikb/core-embeddings build` succeeds
-- [ ] `pnpm --filter @aikb/core-embeddings test` passes (unit tests with mocks)
-- [ ] `LocalHFProvider` works with `Xenova/all-MiniLM-L6-v2` end-to-end (integration test)
-- [ ] `createEmbeddingProvider({ provider: 'local' })` returns a working `LocalHFProvider`
-- [ ] `embedBatch(['a', 'b'])` returns exactly 2 vectors of `dimensions` length
-- [ ] Model download shows progress on `stderr`
+- [x] `pnpm --filter @aikb/core-embeddings build` succeeds
+- [x] `pnpm --filter @aikb/core-embeddings test` passes (unit tests with mocks)
+- [x] `LocalHFProvider` works with `Xenova/all-MiniLM-L6-v2` end-to-end (integration test)
+- [x] `createEmbeddingProvider({ provider: 'local' })` returns a working `LocalHFProvider`
+- [x] `embedBatch(['a', 'b'])` returns exactly 2 vectors of `dimensions` length
+- [x] Model download shows progress on `stderr`
 - [ ] `MockEmbeddingProvider` is exported and usable in other packages' tests
 
 ---
