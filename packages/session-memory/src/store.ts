@@ -81,7 +81,10 @@ export class FileSessionStore implements SessionStore {
   ): Promise<SessionEntry> {
     const eventsFile = this.eventsPath(sessionId);
 
-    await lock(eventsFile, { retries: { retries: 5, minTimeout: 50 } });
+    // retry options passed to the `retry` npm package (used by proper-lockfile):
+    // up to 10 attempts, 50–300 ms apart
+    const retryOptions = { retries: 10, minTimeout: 50, maxTimeout: 300 };
+    await lock(eventsFile, { retries: retryOptions });
     try {
       const full: SessionEntry = SessionEntrySchema.parse({
         ...entry,

@@ -230,7 +230,7 @@ export async function createSessionStore(): Promise<SessionStore> {
 }
 ```
 
-### G8 ⬜ Unit tests (skipped per task instructions)
+### G8 ✅ Unit tests
 
 `src/__tests__/store.test.ts`:
 
@@ -282,7 +282,7 @@ packages/session-memory/
 ## Acceptance Criteria
 
 - [x] `pnpm --filter @aikb/session-memory build` succeeds
-- [ ] `pnpm --filter @aikb/session-memory test` passes all tests (tests skipped per task instructions)
+- [x] `pnpm --filter @aikb/session-memory test` passes all tests
 - [x] `create()` → `add()` → `get()` round-trip works correctly
 - [x] `search()` finds text in memory.md (substring match)
 - [x] Concurrent writes don't corrupt `events.jsonl`
