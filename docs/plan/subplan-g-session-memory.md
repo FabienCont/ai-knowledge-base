@@ -1,4 +1,4 @@
-# ⬜ Subplan G — Session Memory
+# ✅ Subplan G — Session Memory
 
 ## Overview
 
@@ -16,7 +16,7 @@ Implement a flat-text, file-based session memory store (`@aikb/session-memory`) 
 
 ## Detailed Tasks
 
-### G1 ⬜ Package scaffold
+### G1 ✅ Package scaffold
 
 - Package name: `@aikb/session-memory`
 - Runtime dependencies:
@@ -25,7 +25,7 @@ Implement a flat-text, file-based session memory store (`@aikb/session-memory`) 
   - `proper-lockfile ^4.1` — file-based locking for concurrent writes
 - Built-in modules: `node:fs/promises`, `node:path`, `node:crypto`
 
-### G2 ⬜ Storage layout
+### G2 ✅ Storage layout
 
 ```
 {dataDir}/sessions/
@@ -72,7 +72,7 @@ Hello! How can I help?
 }
 ```
 
-### G3 ⬜ SessionStore interface
+### G3 ✅ SessionStore interface
 
 ```ts
 // src/types.ts
@@ -121,7 +121,7 @@ export interface SessionStore {
 }
 ```
 
-### G4 ⬜ FileSessionStore implementation
+### G4 ✅ FileSessionStore implementation
 
 ```ts
 // src/store.ts
@@ -181,7 +181,7 @@ export class FileSessionStore implements SessionStore {
 }
 ```
 
-### G5 ⬜ Session ID generation
+### G5 ✅ Session ID generation
 
 ```ts
 function generateSessionId(): string {
@@ -193,7 +193,7 @@ function generateSessionId(): string {
 // Example: 'session-20240101-a3f7c1'
 ```
 
-### G6 ⬜ Search implementation
+### G6 ✅ Search implementation
 
 Search is done by:
 1. Reading `memory.md` for each session
@@ -218,7 +218,7 @@ async search(options: SearchOptions): Promise<SearchResult[]> {
 }
 ```
 
-### G7 ⬜ Factory function
+### G7 ✅ Factory function
 
 ```ts
 // src/index.ts
@@ -230,7 +230,7 @@ export async function createSessionStore(): Promise<SessionStore> {
 }
 ```
 
-### G8 ⬜ Unit tests
+### G8 ✅ Unit tests
 
 `src/__tests__/store.test.ts`:
 
@@ -281,14 +281,14 @@ packages/session-memory/
 
 ## Acceptance Criteria
 
-- [ ] `pnpm --filter @aikb/session-memory build` succeeds
-- [ ] `pnpm --filter @aikb/session-memory test` passes all tests
-- [ ] `create()` → `add()` → `get()` round-trip works correctly
-- [ ] `search()` finds text in memory.md (substring match)
-- [ ] Concurrent writes don't corrupt `events.jsonl`
-- [ ] `list()` returns sessions newest first
-- [ ] Deleting a session removes all files and directory
-- [ ] Storage layout matches the spec above exactly
+- [x] `pnpm --filter @aikb/session-memory build` succeeds
+- [x] `pnpm --filter @aikb/session-memory test` passes all tests
+- [x] `create()` → `add()` → `get()` round-trip works correctly
+- [x] `search()` finds text in memory.md (substring match)
+- [x] Concurrent writes don't corrupt `events.jsonl`
+- [x] `list()` returns sessions newest first
+- [x] Deleting a session removes all files and directory
+- [x] Storage layout matches the spec above exactly
 
 ---
 

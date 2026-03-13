@@ -145,7 +145,7 @@ Models are stored in `~/.cache/huggingface/hub/` (HF default). Progress bars sho
 | ✅ | D | Core FS Scan | Recursive folder scanner with ignore rules | [subplan-d-core-fs-scan.md](docs/plan/subplan-d-core-fs-scan.md) | 2026-03-12 |
 | ✅ | E | Core Chunking | Text splitting with metadata and hashing | [subplan-e-core-chunking.md](docs/plan/subplan-e-core-chunking.md) | 2026-03-12 |
 | ✅ | F | Core Embeddings | Provider-agnostic embedding (local HF default) | [subplan-f-core-embeddings.md](docs/plan/subplan-f-core-embeddings.md) | 2026-03-12 |
-| ⬜ | G | Session Memory | Flat-text per-session memory store | [subplan-g-session-memory.md](docs/plan/subplan-g-session-memory.md) | |
+| ✅ | G | Session Memory | Flat-text per-session memory store | [subplan-g-session-memory.md](docs/plan/subplan-g-session-memory.md) | 2026-03-13 |
 | ⬜ | H | Vector Store | Qdrant adapter for vector upsert/query | [subplan-h-vector-store.md](docs/plan/subplan-h-vector-store.md) | |
 | ⬜ | I | Graph Store | Neo4j adapter + LLM entity/relation extraction | [subplan-i-graph-store.md](docs/plan/subplan-i-graph-store.md) | |
 | ⬜ | J | CLI App | `aikb` CLI with all subcommands | [subplan-j-cli.md](docs/plan/subplan-j-cli.md) | |
