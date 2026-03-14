@@ -1,4 +1,4 @@
-# ⬜ Subplan J — CLI App
+# ✅ Subplan J — CLI App
 
 ## Overview
 
@@ -22,7 +22,7 @@ Implement the `aikb` CLI application (`apps/cli`) that exposes all knowledge bas
 
 ## Detailed Tasks
 
-### J1 ⬜ App scaffold
+### J1 ✅ App scaffold
 
 - Directory: `apps/cli/`
 - Package name: `@aikb/cli`
@@ -35,7 +35,7 @@ Implement the `aikb` CLI application (`apps/cli`) that exposes all knowledge bas
   - `ora ^8.0`
 - Build: `tsup bin/aikb.ts --format esm --dts false --clean --banner.js '#!/usr/bin/env node'`
 
-### J2 ⬜ Entry point
+### J2 ✅ Entry point
 
 ```ts
 // bin/aikb.ts
@@ -66,7 +66,7 @@ program.parseAsync(process.argv).catch(err => {
 });
 ```
 
-### J3 ⬜ Session commands
+### J3 ✅ Session commands
 
 ```
 aikb session start [--title <title>] [--tag <tag>...]
@@ -110,7 +110,7 @@ export function registerSessionCommands(program: Command): void {
 }
 ```
 
-### J4 ⬜ Vector commands
+### J4 ✅ Vector commands
 
 ```
 aikb vector ingest --root <path> [--collection <name>] [--batch-size <n>]
@@ -148,7 +148,7 @@ export function registerVectorCommands(program: Command): void {
 }
 ```
 
-### J5 ⬜ Graph commands
+### J5 ✅ Graph commands
 
 ```
 aikb graph ingest --root <path> [--batch-size <n>]
@@ -165,7 +165,7 @@ const answer = await summarizeResults(text, results, config.llm);
 output(program, { cypher, results, answer }, answer);
 ```
 
-### J6 ⬜ Models commands
+### J6 ✅ Models commands
 
 ```
 aikb models list
@@ -187,7 +187,7 @@ aikb models download <model-id>
 
 `models download` shows a progress bar using `cli-progress`.
 
-### J7 ⬜ Config commands
+### J7 ✅ Config commands
 
 ```
 aikb config show [--section <section>]
@@ -195,7 +195,7 @@ aikb config show [--section <section>]
 
 Shows the resolved config (with API keys redacted).
 
-### J8 ⬜ Output helpers
+### J8 ✅ Output helpers
 
 ```ts
 // src/output.ts
@@ -217,7 +217,7 @@ export function exitError(message: string, code = 1): never {
 }
 ```
 
-### J9 ⬜ Unit tests
+### J9 ✅ Unit tests
 
 `src/__tests__/commands.test.ts`:
 
@@ -276,14 +276,14 @@ apps/cli/
 
 ## Acceptance Criteria
 
-- [ ] `pnpm --filter @aikb/cli build` succeeds and produces a binary with `#!/usr/bin/env node`
-- [ ] `node dist/bin/aikb.js --help` prints usage
-- [ ] `node dist/bin/aikb.js session start` creates a session and prints the ID
-- [ ] `node dist/bin/aikb.js session start --json` prints valid JSON
+- [x] `pnpm --filter @aikb/cli build` succeeds and produces a binary with `#!/usr/bin/env node`
+- [x] `node dist/bin/aikb.js --help` prints usage
+- [x] `node dist/bin/aikb.js session start` creates a session and prints the ID
+- [x] `node dist/bin/aikb.js session start --json` prints valid JSON
 - [ ] `node dist/bin/aikb.js vector ingest --root .` runs end-to-end (requires Qdrant)
-- [ ] `node dist/bin/aikb.js models list` prints the model table
-- [ ] All commands support `--help`
-- [ ] Exit code is 0 on success, 1 on error
+- [x] `node dist/bin/aikb.js models list` prints the model table
+- [x] All commands support `--help`
+- [x] Exit code is 0 on success, 1 on error
 
 ---
 

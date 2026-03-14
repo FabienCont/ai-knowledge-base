@@ -148,7 +148,7 @@ Models are stored in `~/.cache/huggingface/hub/` (HF default). Progress bars sho
 | ✅ | G | Session Memory | Flat-text per-session memory store | [subplan-g-session-memory.md](docs/plan/subplan-g-session-memory.md) | 2026-03-13 |
 | ✅ | H | Vector Store | Qdrant adapter for vector upsert/query | [subplan-h-vector-store.md](docs/plan/subplan-h-vector-store.md) | 2026-03-13 |
 | ✅ | I | Graph Store | Neo4j adapter + LLM entity/relation extraction | [subplan-i-graph-store.md](docs/plan/subplan-i-graph-store.md) | 2026-03-14 |
-| ⬜ | J | CLI App | `aikb` CLI with all subcommands | [subplan-j-cli.md](docs/plan/subplan-j-cli.md) | |
+| ✅ | J | CLI App | `aikb` CLI with all subcommands | [subplan-j-cli.md](docs/plan/subplan-j-cli.md) | 2026-03-14 |
 | ⬜ | K | MCP Server | MCP server exposing all tools | [subplan-k-mcp-server.md](docs/plan/subplan-k-mcp-server.md) | |
 | ⬜ | L | Docker + Docs | docker-compose, getting started, architecture docs | [subplan-l-docker-integration-docs.md](docs/plan/subplan-l-docker-integration-docs.md) | |
 
