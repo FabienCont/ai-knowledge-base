@@ -171,8 +171,11 @@ export function registerGraphCommands(program: Command): void {
                 totalEntities += ingestResult.entities;
                 totalRelations += ingestResult.relations;
               }
-            } catch {
+            } catch (fileErr) {
               // Skip unreadable or un-chunkable files
+              if (program.opts<{ debug?: boolean }>().debug) {
+                console.error(`[debug] skipped ${entry.path}: ${fileErr instanceof Error ? fileErr.message : String(fileErr)}`);
+              }
             }
             bar?.increment();
           }

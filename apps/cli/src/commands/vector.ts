@@ -83,8 +83,11 @@ export function registerVectorCommands(program: Command): void {
                 totalInserted += upsertResult.inserted;
                 totalSkipped += upsertResult.skipped;
               }
-            } catch {
-              // Skip files that fail to load/chunk (binary files, etc.)
+            } catch (fileErr) {
+              // Skip files that fail to load/chunk (binary files, permissions, etc.)
+              if (program.opts<{ debug?: boolean }>().debug) {
+                console.error(`[debug] skipped ${entry.path}: ${fileErr instanceof Error ? fileErr.message : String(fileErr)}`);
+              }
             }
             bar?.increment();
           }

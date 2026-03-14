@@ -173,8 +173,8 @@ describe('session commands', () => {
     });
 
     const parsed: unknown = JSON.parse(out);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    expect(parsed).toMatchObject({ id: expect.stringMatching(/^session-/) });
+    expect(parsed).toMatchObject({ id: expect.any(String) as string });
+    expect((parsed as { id: string }).id).toMatch(/^session-/);
   });
 
   it('session list returns empty message when no sessions exist', async () => {
