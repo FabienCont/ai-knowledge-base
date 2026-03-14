@@ -35,8 +35,6 @@ export async function ingestChunks(
   for (const chunk of chunks) {
     const extraction = await extractor.extractFromChunk(chunk);
 
-    if (extraction.entities.length === 0) continue;
-
     // Attach the current chunk ID to every extracted entity candidate
     const candidates = extraction.entities.map((e) => ({
       ...e,
@@ -45,14 +43,16 @@ export async function ingestChunks(
       ),
     }));
 
-    // Resolve candidates (dedup + assign IDs)
+    // Resolve candidates (dedup + assign IDs). Returns [] when candidates is [].
     const entities = await extractor.resolveEntities(
       candidates,
       store,
       embeddingProvider,
     );
 
-    await store.upsertEntities(entities);
+    if (entities.length > 0) {
+      await store.upsertEntities(entities);
+    }
 
     // Map relation names → resolved entity IDs
     const relations = mapRelations(extraction.relations, entities, chunk.id);

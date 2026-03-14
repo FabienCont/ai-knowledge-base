@@ -17,12 +17,30 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Neo4jGraphStore } from '../neo4j.js';
 import { MockExtractor } from '../extractor/mock.js';
 import { ingestChunks } from '../ingest.js';
-import { MockEmbeddingProvider } from '@aikb/core-embeddings';
 import type { GraphConfig } from '@aikb/core-config';
 import type { Chunk, Entity } from '@aikb/core-types';
+import type { EmbeddingProvider } from '@aikb/core-embeddings';
 
 const NEO4J_URI = process.env['NEO4J_URI'];
 const SKIP = !NEO4J_URI;
+
+// ---------------------------------------------------------------------------
+// Inline mock embedding provider — avoids importing @aikb/core-embeddings
+// which loads onnxruntime-node (a native module that may fail on CI).
+// ---------------------------------------------------------------------------
+
+class InlineMockEmbeddingProvider implements EmbeddingProvider {
+  readonly name = 'inline-mock';
+  readonly dimensions = 4;
+  ensureModel(): Promise<void> { return Promise.resolve(); }
+  embed(text: string): Promise<number[]> {
+    const h = text.split('').reduce((a, c) => a + c.charCodeAt(0), 1);
+    return Promise.resolve([h, h * 2, h * 3, h * 4]);
+  }
+  embedBatch(texts: string[]): Promise<number[][]> {
+    return Promise.all(texts.map((t) => this.embed(t)));
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -87,7 +105,7 @@ function makeTaggedExtractor(tag: string) {
 
 describe.skipIf(SKIP)('Neo4jGraphStore (integration)', () => {
   let store: Neo4jGraphStore;
-  const provider = new MockEmbeddingProvider();
+  const provider = new InlineMockEmbeddingProvider();
 
   beforeAll(async () => {
     store = new Neo4jGraphStore(makeConfig());

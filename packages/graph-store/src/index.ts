@@ -3,6 +3,7 @@ import { Neo4jGraphStore } from './neo4j.js';
 import type { GraphStore } from './types.js';
 import { NullExtractor } from './extractor/null.js';
 import { OpenAIExtractor } from './extractor/openai.js';
+import { OllamaExtractor } from './extractor/ollama.js';
 import type { Extractor } from './extractor/types.js';
 
 // ---------------------------------------------------------------------------
@@ -17,14 +18,22 @@ export async function createGraphStore(): Promise<GraphStore> {
 
 /**
  * Create an extractor from the current application config.
- * Returns a NullExtractor when `config.llm.provider === 'none'`.
+ *
+ * - `provider: 'none'`   → NullExtractor (no LLM, returns empty results)
+ * - `provider: 'openai'` → OpenAIExtractor (requires `api_key`)
+ * - `provider: 'ollama'` → OllamaExtractor (uses local Ollama /v1 API)
  */
 export async function createExtractor(): Promise<Extractor> {
   const config = await getConfig();
-  if (config.llm.provider === 'none') {
-    return new NullExtractor();
+  switch (config.llm.provider) {
+    case 'none':
+      return new NullExtractor();
+    case 'ollama':
+      return new OllamaExtractor(config.llm);
+    case 'openai':
+    default:
+      return new OpenAIExtractor(config.llm);
   }
-  return new OpenAIExtractor(config.llm);
 }
 
 // ---------------------------------------------------------------------------
@@ -38,6 +47,7 @@ export { ingestChunks } from './ingest.js';
 export type { IngestResult } from './ingest.js';
 
 export { OpenAIExtractor } from './extractor/openai.js';
+export { OllamaExtractor } from './extractor/ollama.js';
 export { MockExtractor } from './extractor/mock.js';
 export { NullExtractor } from './extractor/null.js';
 export { resolveEntities } from './extractor/resolution.js';

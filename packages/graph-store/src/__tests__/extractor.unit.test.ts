@@ -9,7 +9,6 @@ import { NullExtractor } from '../extractor/null.js';
 import { LLMExtractionSchema } from '../extractor/types.js';
 import { resolveEntities } from '../extractor/resolution.js';
 import { ingestChunks } from '../ingest.js';
-import { MockEmbeddingProvider } from '@aikb/core-embeddings';
 import type { EmbeddingProvider } from '@aikb/core-embeddings';
 import type { Chunk, Entity } from '@aikb/core-types';
 import type { GraphStore, GraphStoreStats } from '../types.js';
@@ -31,14 +30,13 @@ function makeChunk(overrides?: Partial<Chunk>): Chunk {
 }
 
 /**
- * Embedding provider that returns a deterministic non-zero vector based on the
- * character sum of the text.  Unlike MockEmbeddingProvider, these vectors are
- * guaranteed to be non-zero, so cosine similarity is well-defined.
+ * Inline mock embedding provider — does not depend on @aikb/core-embeddings.
+ * Returns deterministic non-zero vectors so cosine similarity is well-defined.
  */
 class NonZeroMockEmbeddingProvider implements EmbeddingProvider {
   readonly name = 'non-zero-mock';
   readonly dimensions = 4;
-  async ensureModel(): Promise<void> {}
+  ensureModel(): Promise<void> { return Promise.resolve(); }
   embed(text: string): Promise<number[]> {
     const h = text.split('').reduce((a, c) => a + c.charCodeAt(0), 1); // start at 1
     return Promise.resolve([h, h * 2, h * 3, h * 4]);
@@ -169,7 +167,7 @@ describe('NullExtractor', () => {
   it('resolveEntities returns empty array', async () => {
     const extractor = new NullExtractor();
     const store = makeMemoryStore();
-    const provider = new MockEmbeddingProvider();
+    const provider = new NonZeroMockEmbeddingProvider();
     const result = await extractor.resolveEntities([], store, provider);
     expect(result).toHaveLength(0);
   });
@@ -210,7 +208,7 @@ describe('MockExtractor', () => {
 // ---------------------------------------------------------------------------
 
 describe('resolveEntities', () => {
-  const provider = new MockEmbeddingProvider();
+  const provider = new NonZeroMockEmbeddingProvider();
 
   it('assigns fresh UUIDs to candidates when store is empty', async () => {
     const store = makeMemoryStore();
@@ -258,6 +256,31 @@ describe('resolveEntities', () => {
     expect(result[0]!.source_chunk_ids).toContain('old-chunk');
     expect(result[0]!.source_chunk_ids).toContain('new-chunk');
   });
+
+  it('does NOT merge entities of different types even with identical names', async () => {
+    const existingEntity: Entity = {
+      id: 'existing-person-id',
+      name: 'Java',
+      type: 'Person',
+      aliases: [],
+      source_chunk_ids: ['old-chunk'],
+    };
+    const store = makeMemoryStore([existingEntity]);
+    const candidates = [
+      {
+        name: 'Java', // same name but different type
+        type: 'Technology',
+        aliases: [],
+        source_chunk_ids: ['new-chunk'],
+      },
+    ];
+    const result = await resolveEntities(candidates, store, provider);
+    expect(result).toHaveLength(1);
+    // Must NOT reuse the Person entity's ID
+    expect(result[0]!.id).not.toBe('existing-person-id');
+    // Must be a new entity with a fresh UUID
+    expect(result[0]!.type).toBe('Technology');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -265,7 +288,7 @@ describe('resolveEntities', () => {
 // ---------------------------------------------------------------------------
 
 describe('ingestChunks', () => {
-  const provider = new MockEmbeddingProvider();
+  const provider = new NonZeroMockEmbeddingProvider();
 
   it('returns zero counts when no chunks provided', async () => {
     const store = makeMemoryStore();
@@ -333,5 +356,55 @@ describe('ingestChunks', () => {
     await ingestChunks([makeChunk()], store, extractor, provider);
     expect(upsertEntitiesSpy).toHaveBeenCalledOnce();
     expect(upsertRelationsSpy).not.toHaveBeenCalled(); // no relations from default mock
+  });
+
+  it('does not skip chunks where extraction returns no entities', async () => {
+    // Extractor returns no entities — pipeline should still complete without error,
+    // reporting 0 entities and 0 relations for that chunk.
+    const store = makeMemoryStore();
+    const upsertEntitiesSpy = vi.spyOn(store, 'upsertEntities');
+    const extractor = new MockExtractor(() => ({ entities: [], relations: [] }));
+    const result = await ingestChunks([makeChunk()], store, extractor, provider);
+    expect(result.entities).toBe(0);
+    expect(result.relations).toBe(0);
+    // upsertEntities must NOT have been called (entities array was empty)
+    expect(upsertEntitiesSpy).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// OpenAIExtractor — constructor validation
+// ---------------------------------------------------------------------------
+
+import { OpenAIExtractor } from '../extractor/openai.js';
+import type { LLMConfig } from '@aikb/core-config';
+
+describe('OpenAIExtractor constructor', () => {
+  function makeLLMConfig(overrides?: Partial<LLMConfig>): LLMConfig {
+    return {
+      provider: 'openai',
+      model: 'gpt-4o-mini',
+      temperature: 0,
+      max_tokens: 2048,
+      ...overrides,
+    };
+  }
+
+  it('throws a clear error when api_key is missing', () => {
+    expect(() => new OpenAIExtractor(makeLLMConfig({ api_key: undefined }))).toThrow(
+      /api_key is required/,
+    );
+  });
+
+  it('throws when api_key is empty string', () => {
+    expect(() => new OpenAIExtractor(makeLLMConfig({ api_key: '' }))).toThrow(
+      /api_key is required/,
+    );
+  });
+
+  it('constructs successfully when api_key is provided', () => {
+    expect(
+      () => new OpenAIExtractor(makeLLMConfig({ api_key: 'sk-test-key' })),
+    ).not.toThrow();
   });
 });

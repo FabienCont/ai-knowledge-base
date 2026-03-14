@@ -20,16 +20,23 @@ export class Neo4jGraphStore implements GraphStore {
   }
 
   async ensureSchema(): Promise<void> {
-    // Constraints
+    // Entity ID uniqueness constraint (single-property — supported in CE)
     await this.run(`
       CREATE CONSTRAINT entity_id IF NOT EXISTS
       FOR (e:Entity) REQUIRE e.id IS UNIQUE
     `);
+    // Composite uniqueness on (name, type) — prevents duplicate Entity nodes.
+    // Multi-property uniqueness is supported in Neo4j 5.x Community Edition.
+    await this.run(`
+      CREATE CONSTRAINT entity_name_type_unique IF NOT EXISTS
+      FOR (e:Entity) REQUIRE (e.name, e.type) IS UNIQUE
+    `);
+    // Chunk ID uniqueness
     await this.run(`
       CREATE CONSTRAINT chunk_id IF NOT EXISTS
       FOR (c:Chunk) REQUIRE c.id IS UNIQUE
     `);
-    // Indexes
+    // Individual indexes for look-ups by name or type alone
     await this.run(`
       CREATE INDEX entity_name IF NOT EXISTS
       FOR (e:Entity) ON (e.name)
@@ -38,17 +45,14 @@ export class Neo4jGraphStore implements GraphStore {
       CREATE INDEX entity_type IF NOT EXISTS
       FOR (e:Entity) ON (e.type)
     `);
-    await this.run(`
-      CREATE INDEX entity_name_type IF NOT EXISTS
-      FOR (e:Entity) ON (e.name, e.type)
-    `);
   }
 
   async upsertEntities(entities: Entity[]): Promise<void> {
     if (entities.length === 0) return;
     // Use UNWIND to batch all entities into a single round-trip.
-    // Arrays (aliases, source_chunk_ids) are merged as sets via list comprehension —
-    // no APOC required, works on stock Neo4j 5.x.
+    // Arrays are deduplicated in JS before sending and merged via list
+    // comprehension on match — coalesce() handles null on legacy/manual nodes.
+    // No APOC required, works on stock Neo4j 5.x Community Edition.
     await this.run(
       `
       UNWIND $entities AS e
@@ -63,9 +67,9 @@ export class Neo4jGraphStore implements GraphStore {
         n.description      = CASE WHEN e.description IS NULL
                                   THEN n.description
                                   ELSE e.description END,
-        n.aliases          = [x IN n.aliases
+        n.aliases          = [x IN coalesce(n.aliases, [])
                                 WHERE NOT x IN e.aliases] + e.aliases,
-        n.source_chunk_ids = [x IN n.source_chunk_ids
+        n.source_chunk_ids = [x IN coalesce(n.source_chunk_ids, [])
                                 WHERE NOT x IN e.source_chunk_ids]
                              + e.source_chunk_ids,
         n.updated_at       = datetime()
@@ -76,8 +80,10 @@ export class Neo4jGraphStore implements GraphStore {
           name: e.name,
           type: e.type,
           description: e.description ?? null,
-          aliases: e.aliases ?? [],
-          source_chunk_ids: e.source_chunk_ids,
+          // Deduplicate incoming arrays before sending to Neo4j so the
+          // "set union" guarantee holds even with duplicate inputs.
+          aliases: Array.from(new Set(e.aliases ?? [])),
+          source_chunk_ids: Array.from(new Set(e.source_chunk_ids)),
         })),
       },
     );
@@ -98,7 +104,7 @@ export class Neo4jGraphStore implements GraphStore {
         r.confidence       = rel.confidence,
         r.created_at       = datetime()
       ON MATCH SET
-        r.source_chunk_ids = [x IN r.source_chunk_ids
+        r.source_chunk_ids = [x IN coalesce(r.source_chunk_ids, [])
                                 WHERE NOT x IN rel.source_chunk_ids]
                              + rel.source_chunk_ids,
         r.updated_at       = datetime()
@@ -109,7 +115,7 @@ export class Neo4jGraphStore implements GraphStore {
           subject_id: r.subject_id,
           object_id: r.object_id,
           predicate: r.predicate,
-          source_chunk_ids: r.source_chunk_ids,
+          source_chunk_ids: Array.from(new Set(r.source_chunk_ids)),
           confidence: r.confidence ?? 1.0,
         })),
       },

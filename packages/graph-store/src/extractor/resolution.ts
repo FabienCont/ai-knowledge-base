@@ -94,6 +94,13 @@ export async function resolveEntities(
     let bestExisting: Entity | undefined;
 
     for (let ei = 0; ei < existing.length; ei++) {
+      // Only compare entities of the same type to avoid cross-type merges
+      // (e.g., a Person "Java" merging with a Technology "Java").
+      if (
+        existing[ei]!.type.toLowerCase() !== candidate.type.toLowerCase()
+      ) {
+        continue;
+      }
       const score = cosineSimilarity(candidateVec, existingVecs[ei]!);
       if (score > bestScore) {
         bestScore = score;

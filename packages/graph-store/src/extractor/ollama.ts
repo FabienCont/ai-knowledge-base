@@ -8,21 +8,25 @@ import { EXTRACTION_SYSTEM_PROMPT } from './prompts.js';
 import { resolveEntities } from './resolution.js';
 import type { GraphStore } from '../types.js';
 
-export class OpenAIExtractor implements Extractor {
+/** Default Ollama base URL for the OpenAI-compatible API endpoint. */
+const OLLAMA_BASE_URL = 'http://localhost:11434/v1';
+
+/**
+ * LLM extractor backed by a locally running Ollama server.
+ *
+ * Ollama exposes an OpenAI-compatible `/v1` API, so this extractor uses the
+ * OpenAI SDK with a custom `baseURL`.  No API key is required.
+ */
+export class OllamaExtractor implements Extractor {
   private readonly config: LLMConfig;
   private readonly client: OpenAI;
 
   constructor(config: LLMConfig) {
-    if (!config.api_key) {
-      throw new Error(
-        'OpenAIExtractor: api_key is required for provider "openai". ' +
-          'Set it via AIKB_LLM_API_KEY or in your config file.',
-      );
-    }
     this.config = config;
     this.client = new OpenAI({
-      apiKey: config.api_key,
-      ...(config.base_url !== undefined ? { baseURL: config.base_url } : {}),
+      // Ollama does not require an API key; use a placeholder to satisfy the SDK.
+      apiKey: 'ollama',
+      baseURL: config.base_url ?? OLLAMA_BASE_URL,
     });
   }
 
