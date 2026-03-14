@@ -1,4 +1,4 @@
-# ⬜ Subplan H — Vector Store
+# ✅ Subplan H — Vector Store
 
 ## Overview
 
@@ -17,7 +17,7 @@ Implement a Qdrant adapter (`@aikb/vector-store`) that provides idempotent upser
 
 ## Detailed Tasks
 
-### H1 ⬜ Package scaffold
+### H1 ✅ Package scaffold
 
 - Package name: `@aikb/vector-store`
 - Runtime dependencies:
@@ -26,7 +26,7 @@ Implement a Qdrant adapter (`@aikb/vector-store`) that provides idempotent upser
   - `@aikb/core-embeddings workspace:*`
   - `@qdrant/js-client-rest ^1.9`
 
-### H2 ⬜ VectorStore interface
+### H2 ✅ VectorStore interface
 
 ```ts
 // src/types.ts
@@ -72,7 +72,7 @@ export interface VectorStore {
 }
 ```
 
-### H3 ⬜ QdrantVectorStore implementation
+### H3 ✅ QdrantVectorStore implementation
 
 ```ts
 // src/qdrant.ts
@@ -185,7 +185,7 @@ export class QdrantVectorStore implements VectorStore {
 }
 ```
 
-### H4 ⬜ UUID to Qdrant ID mapping
+### H4 ✅ UUID to Qdrant ID mapping
 
 Qdrant supports both string UUIDs and `uint64` IDs. Use string UUIDs (Qdrant v1.1+ supports them natively):
 
@@ -194,7 +194,7 @@ Qdrant supports both string UUIDs and `uint64` IDs. Use string UUIDs (Qdrant v1.
 // No conversion needed — Qdrant accepts UUID strings as point IDs
 ```
 
-### H5 ⬜ Duplicate detection
+### H5 ✅ Duplicate detection
 
 To avoid re-embedding chunks that haven't changed:
 ```ts
@@ -211,7 +211,7 @@ private async getExistingHashes(hashes: string[]): Promise<Set<string>> {
 }
 ```
 
-### H6 ⬜ Factory function
+### H6 ✅ Factory function
 
 ```ts
 // src/index.ts
@@ -221,12 +221,11 @@ export async function createVectorStore(): Promise<VectorStore> {
 }
 ```
 
-### H7 ⬜ Docker Compose
+### H7 ✅ Docker Compose
 
 Create `docker/docker-compose.yml` (or update if it exists):
 
 ```yaml
-version: '3.8'
 services:
   qdrant:
     image: qdrant/qdrant:latest
@@ -244,7 +243,7 @@ volumes:
   qdrant_data:
 ```
 
-### H8 ⬜ Integration tests
+### H8 ✅ Integration tests
 
 `src/__tests__/qdrant.integration.test.ts`:
 
@@ -296,13 +295,13 @@ packages/vector-store/
 
 ## Acceptance Criteria
 
-- [ ] `pnpm --filter @aikb/vector-store build` succeeds
-- [ ] `pnpm --filter @aikb/vector-store test` passes unit tests without Qdrant
-- [ ] Integration tests pass when `QDRANT_URL` is set and Qdrant is running
-- [ ] Upserting the same chunks twice results in `skipped == chunks.length` on the second call
-- [ ] `query()` returns results sorted by score (highest first)
-- [ ] `deleteBySource()` removes all points for a given file
-- [ ] `ensureCollection()` is safe to call multiple times (idempotent)
+- [x] `pnpm --filter @aikb/vector-store build` succeeds
+- [x] `pnpm --filter @aikb/vector-store test` passes unit tests without Qdrant
+- [x] Integration tests pass when `QDRANT_URL` is set and Qdrant is running
+- [x] Upserting the same chunks twice results in `skipped == chunks.length` on the second call
+- [x] `query()` returns results sorted by score (highest first)
+- [x] `deleteBySource()` removes all points for a given file
+- [x] `ensureCollection()` is safe to call multiple times (idempotent)
 
 ---
 
