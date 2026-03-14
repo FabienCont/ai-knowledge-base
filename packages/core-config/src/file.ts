@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, access } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { ConfigError } from './errors.js';
@@ -45,7 +45,13 @@ export async function loadFromFile(configPath?: string): Promise<Partial<AppConf
           );
         }
       } else {
-        // JS / ESM dynamic import
+        // JS / ESM dynamic import — check existence first to avoid confusing errors
+        try {
+          await access(resolvedPath);
+        } catch {
+          // File does not exist — try next candidate
+          continue;
+        }
         const fileUrl = pathToFileURL(resolvedPath).href;
         try {
           const mod = (await import(fileUrl)) as { default?: Partial<AppConfig> };
