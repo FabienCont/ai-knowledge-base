@@ -17,12 +17,30 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { QdrantVectorStore } from '../qdrant.js';
 import type { VectorConfig } from '@aikb/core-config';
 import type { Chunk } from '@aikb/core-types';
-import { MockEmbeddingProvider } from '@aikb/core-embeddings';
+import type { EmbeddingProvider } from '@aikb/core-embeddings';
 
 const QDRANT_URL = process.env['QDRANT_URL'];
 const SKIP = !QDRANT_URL;
 
 const TEST_COLLECTION = `aikb-integration-${Date.now()}`;
+
+// ---------------------------------------------------------------------------
+// Inline mock embedding provider — avoids importing @aikb/core-embeddings
+// which loads onnxruntime-node (a native module that may fail on CI).
+// ---------------------------------------------------------------------------
+
+class InlineMockEmbeddingProvider implements EmbeddingProvider {
+  readonly name = 'inline-mock';
+  readonly dimensions = 4;
+  ensureModel(): Promise<void> { return Promise.resolve(); }
+  embed(text: string): Promise<number[]> {
+    const h = text.split('').reduce((a, c) => a + c.charCodeAt(0), 1);
+    return Promise.resolve([h, h * 2, h * 3, h * 4]);
+  }
+  embedBatch(texts: string[]): Promise<number[][]> {
+    return Promise.all(texts.map((t) => this.embed(t)));
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -56,7 +74,7 @@ function makeChunk(overrides?: Partial<Chunk>): Chunk {
 
 describe.skipIf(SKIP)('QdrantVectorStore (integration)', () => {
   let store: QdrantVectorStore;
-  const provider = new MockEmbeddingProvider();
+  const provider = new InlineMockEmbeddingProvider();
 
   beforeAll(async () => {
     store = new QdrantVectorStore(makeConfig());

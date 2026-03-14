@@ -9,5 +9,18 @@ services:
       - qdrant_data:/qdrant/storage
     restart: unless-stopped
 
+  neo4j:
+    image: neo4j:5-community
+    container_name: aikb-neo4j
+    ports:
+      - "7474:7474"   # HTTP (Browser UI)
+      - "7687:7687"   # Bolt
+    volumes:
+      - neo4j_data:/data
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-password}
+    restart: unless-stopped
+
 volumes:
   qdrant_data:
+  neo4j_data:
