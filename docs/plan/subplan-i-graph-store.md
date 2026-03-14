@@ -1,4 +1,4 @@
-# ⬜ Subplan I — Graph Store + LLM Extract
+# ✅ Subplan I — Graph Store + LLM Extract
 
 ## Overview
 
@@ -18,7 +18,7 @@ Implement the graph store package (`@aikb/graph-store`) which includes a Neo4j a
 
 ## Detailed Tasks
 
-### I1 ⬜ Package scaffold
+### I1 ✅ Package scaffold
 
 - Package name: `@aikb/graph-store`
 - Runtime dependencies:
@@ -29,7 +29,7 @@ Implement the graph store package (`@aikb/graph-store`) which includes a Neo4j a
   - `zod ^3.22`
   - `openai ^4.0` (optional, for LLM extraction)
 
-### I2 ⬜ GraphStore interface
+### I2 ✅ GraphStore interface
 
 ```ts
 // src/types.ts
@@ -74,7 +74,7 @@ export interface GraphStore {
 }
 ```
 
-### I3 ⬜ Neo4jGraphStore implementation
+### I3 ✅ Neo4jGraphStore implementation
 
 ```ts
 // src/neo4j.ts
@@ -208,7 +208,7 @@ export class Neo4jGraphStore implements GraphStore {
 }
 ```
 
-### I4 ⬜ LLM Extractor interface
+### I4 ✅ LLM Extractor interface
 
 ```ts
 // src/extractor/types.ts
@@ -245,7 +245,7 @@ export interface Extractor {
 }
 ```
 
-### I5 ⬜ LLM extraction prompts
+### I5 ✅ LLM extraction prompts
 
 System prompt for entity extraction:
 ```
@@ -289,7 +289,7 @@ const LLMExtractionSchema = z.object({
 });
 ```
 
-### I6 ⬜ OpenAIExtractor implementation
+### I6 ✅ OpenAIExtractor implementation
 
 ```ts
 // src/extractor/openai.ts
@@ -314,7 +314,7 @@ export class OpenAIExtractor implements Extractor {
 }
 ```
 
-### I7 ⬜ Entity resolution
+### I7 ✅ Entity resolution
 
 ```ts
 // src/extractor/resolution.ts
@@ -332,7 +332,7 @@ export async function resolveEntities(
 }
 ```
 
-### I8 ⬜ Ingestion pipeline
+### I8 ✅ Ingestion pipeline
 
 ```ts
 // src/ingest.ts
@@ -366,7 +366,7 @@ export async function ingestChunks(
 }
 ```
 
-### I9 ⬜ Docker Compose update
+### I9 ✅ Docker Compose update
 
 Add Neo4j service to `docker/docker-compose.yml`:
 
@@ -388,7 +388,7 @@ volumes:
   neo4j_data:
 ```
 
-### I10 ⬜ Integration tests
+### I10 ✅ Integration tests
 
 Tag as `@integration`, skip without `NEO4J_URI` env var.
 
@@ -440,13 +440,13 @@ packages/graph-store/
 
 ## Acceptance Criteria
 
-- [ ] `pnpm --filter @aikb/graph-store build` succeeds
-- [ ] `pnpm --filter @aikb/graph-store test` passes unit tests without Neo4j
-- [ ] Integration tests pass when `NEO4J_URI` is set and Neo4j is running
-- [ ] Ingest 3 files → verify graph has expected entity and relation nodes
-- [ ] Re-ingestion of same chunks doesn't create duplicate nodes
-- [ ] `queryCypher` executes arbitrary Cypher and returns results
-- [ ] LLM extraction result is validated with Zod (invalid LLM output throws)
+- [x] `pnpm --filter @aikb/graph-store build` succeeds
+- [x] `pnpm --filter @aikb/graph-store test` passes unit tests without Neo4j
+- [x] Integration tests pass when `NEO4J_URI` is set and Neo4j is running
+- [x] Ingest 3 files → verify graph has expected entity and relation nodes
+- [x] Re-ingestion of same chunks doesn't create duplicate nodes
+- [x] `queryCypher` executes arbitrary Cypher and returns results
+- [x] LLM extraction result is validated with Zod (invalid LLM output throws)
 
 ---
 
