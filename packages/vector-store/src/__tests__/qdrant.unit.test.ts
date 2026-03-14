@@ -208,6 +208,17 @@ describe('buildQdrantFilter', () => {
     expect(filter.must).toHaveLength(2);
   });
 
+  it('skips value wrapper when value is not a supported primitive', () => {
+    // Objects and arrays should be silently ignored, not emit invalid conditions
+    const filter = buildQdrantFilter({ field: { value: { nested: 'obj' } } });
+    expect(filter.must).toHaveLength(0);
+  });
+
+  it('converts boolean exact match', () => {
+    const filter = buildQdrantFilter({ active: true });
+    expect(filter.must?.[0]).toEqual({ key: 'active', match: { value: true } });
+  });
+
   it('skips null and undefined values', () => {
     const filter = buildQdrantFilter({ source_path: null, language: undefined });
     expect(filter.must).toHaveLength(0);
@@ -320,6 +331,14 @@ describe('upsert()', () => {
     expect(mocks.upsert).not.toHaveBeenCalled();
   });
 
+  it('throws when chunks and vectors lengths differ', async () => {
+    const { store } = makeStore();
+    const chunk = makeChunk();
+    await expect(store.upsert([chunk], [])).rejects.toThrow(
+      'chunks.length (1) must equal vectors.length (0)',
+    );
+  });
+
   it('inserts new chunks when none exist', async () => {
     const { store, mocks } = makeStore();
     const chunk = makeChunk();
@@ -350,6 +369,30 @@ describe('upsert()', () => {
     expect(result.skipped).toBe(1);
     expect(result.inserted).toBe(0);
     expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it('paginates getExistingHashes when scroll returns a next_page_offset', async () => {
+    const { store, mocks } = makeStore();
+    const chunk1 = makeChunk({ hash: 'a'.repeat(64), id: '00000000-0000-0000-0000-000000000001' });
+    const chunk2 = makeChunk({ hash: 'b'.repeat(64), id: '00000000-0000-0000-0000-000000000002' });
+
+    // Simulate two scroll pages — both hashes are already present
+    mocks.scroll
+      .mockResolvedValueOnce({
+        points: [{ id: chunk1.id, payload: { hash: chunk1.hash } }],
+        next_page_offset: chunk1.id,
+      })
+      .mockResolvedValueOnce({
+        points: [{ id: chunk2.id, payload: { hash: chunk2.hash } }],
+        next_page_offset: null,
+      });
+
+    const result = await store.upsert([chunk1, chunk2], [[0.1, 0.2], [0.3, 0.4]]);
+
+    expect(result.skipped).toBe(2);
+    expect(result.inserted).toBe(0);
+    expect(mocks.upsert).not.toHaveBeenCalled();
+    expect(mocks.scroll).toHaveBeenCalledTimes(2);
   });
 
   it('sends correct point structure to Qdrant', async () => {
@@ -472,6 +515,54 @@ describe('query()', () => {
     const callArgs = mocks.search.mock.calls[0]?.[1] as Record<string, unknown>;
     expect(callArgs['score_threshold']).toBe(0.5);
     expect(callArgs['filter']).toBeDefined();
+  });
+
+  it('skips search results that are missing required payload fields', async () => {
+    const { store, mocks } = makeStore();
+    const mockProvider = {
+      embed: vi.fn().mockResolvedValue([0.1]),
+      embedBatch: vi.fn(),
+      name: 'mock',
+      dimensions: 1,
+      ensureModel: vi.fn(),
+    };
+
+    mocks.search.mockResolvedValue([
+      // No payload at all
+      { id: 'id-1', version: 0, score: 0.9 },
+      // Incomplete payload — missing required `index` field
+      {
+        id: 'id-2',
+        version: 0,
+        score: 0.8,
+        payload: {
+          chunk_id: 'c',
+          document_id: 'd',
+          source_path: 's',
+          content: 'x',
+          hash: 'h'.repeat(64),
+        },
+      },
+      // Complete payload — should be included in results
+      {
+        id: '00000000-0000-0000-0000-000000000001',
+        version: 0,
+        score: 0.7,
+        payload: {
+          chunk_id: '00000000-0000-0000-0000-000000000001',
+          document_id: '00000000-0000-0000-0000-000000000002',
+          source_path: 'src/index.ts',
+          content: 'hello',
+          hash: 'a'.repeat(64),
+          index: 0,
+        },
+      },
+    ]);
+
+    const result = await store.query({ text: 'q', top_k: 5 }, mockProvider);
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.score).toBe(0.7);
   });
 
   it('includes duration_ms in result', async () => {

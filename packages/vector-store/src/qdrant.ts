@@ -52,6 +52,12 @@ export class QdrantVectorStore implements VectorStore {
       return { inserted: 0, updated: 0, skipped: 0 };
     }
 
+    if (chunks.length !== vectors.length) {
+      throw new Error(
+        `upsert: chunks.length (${chunks.length}) must equal vectors.length (${vectors.length})`,
+      );
+    }
+
     // Deduplicate by hash — skip chunks already in the collection
     const existingHashes = await this.getExistingHashes(
       chunks.map((c) => c.hash),
@@ -106,10 +112,23 @@ export class QdrantVectorStore implements VectorStore {
         : {}),
     });
 
-    const items: ResultItem[] = results.map((r) => ({
-      chunk: payloadToChunk(r.payload ?? {}),
-      score: r.score,
-    }));
+    const items: ResultItem[] = [];
+    for (const r of results) {
+      const payload = r.payload ?? {};
+      // Skip results that are missing required fields to avoid creating
+      // incomplete Chunk objects (e.g. points inserted without payloads).
+      if (
+        typeof payload['chunk_id'] !== 'string' ||
+        typeof payload['document_id'] !== 'string' ||
+        typeof payload['source_path'] !== 'string' ||
+        typeof payload['content'] !== 'string' ||
+        typeof payload['hash'] !== 'string' ||
+        typeof payload['index'] !== 'number'
+      ) {
+        continue;
+      }
+      items.push({ chunk: payloadToChunk(payload), score: r.score });
+    }
 
     // Results come back sorted by score (highest first) from Qdrant
     return {
@@ -151,10 +170,9 @@ export class QdrantVectorStore implements VectorStore {
   }
 
   async deleteBySource(sourcePrefix: string): Promise<number> {
-    // Collect IDs of all points whose source_path starts with the given prefix.
-    // We paginate through the collection because Qdrant has no native
-    // "starts with" filter for payload text fields.
-    const toDelete: (string | number)[] = [];
+    // Scroll through the collection and delete matching points incrementally
+    // so we never accumulate a large in-memory list before issuing deletes.
+    let totalDeleted = 0;
     let nextOffset: string | number | undefined = undefined;
 
     do {
@@ -164,11 +182,60 @@ export class QdrantVectorStore implements VectorStore {
         ...(nextOffset !== undefined ? { offset: nextOffset } : {}),
       });
 
+      const rawOffset = result.next_page_offset;
+      nextOffset =
+        rawOffset !== null && rawOffset !== undefined
+          ? (rawOffset as string | number)
+          : undefined;
+
+      const toDelete: (string | number)[] = [];
       for (const point of result.points) {
         const sp =
           (point.payload?.['source_path'] as string | undefined) ?? '';
         if (sp.startsWith(sourcePrefix)) {
           toDelete.push(point.id);
+        }
+      }
+
+      // Delete this page's matches in batches (within DELETE_BATCH_SIZE limit)
+      for (let i = 0; i < toDelete.length; i += DELETE_BATCH_SIZE) {
+        await this.client.delete(this.collectionName, {
+          points: toDelete.slice(i, i + DELETE_BATCH_SIZE),
+          wait: true,
+        });
+      }
+
+      totalDeleted += toDelete.length;
+    } while (nextOffset !== undefined);
+
+    return totalDeleted;
+  }
+
+  /**
+   * Return the set of chunk hashes that are already stored in the collection.
+   * Used to skip re-uploading unchanged chunks (idempotent upsert by hash).
+   * Paginates with `next_page_offset` to handle large hash lists correctly.
+   */
+  private async getExistingHashes(hashes: string[]): Promise<Set<string>> {
+    if (hashes.length === 0) return new Set();
+
+    const found = new Set<string>();
+    let nextOffset: string | number | undefined = undefined;
+
+    do {
+      const result = await this.client.scroll(this.collectionName, {
+        filter: {
+          must: [{ key: 'hash', match: { any: hashes } }],
+        },
+        with_payload: ['hash'],
+        limit: SCROLL_PAGE_SIZE,
+        ...(nextOffset !== undefined ? { offset: nextOffset } : {}),
+      });
+
+      for (const point of result.points) {
+        const hash = point.payload?.['hash'];
+        if (typeof hash === 'string') {
+          found.add(hash);
         }
       }
 
@@ -179,41 +246,6 @@ export class QdrantVectorStore implements VectorStore {
           : undefined;
     } while (nextOffset !== undefined);
 
-    if (toDelete.length === 0) return 0;
-
-    // Delete collected IDs in batches
-    for (let i = 0; i < toDelete.length; i += DELETE_BATCH_SIZE) {
-      await this.client.delete(this.collectionName, {
-        points: toDelete.slice(i, i + DELETE_BATCH_SIZE),
-        wait: true,
-      });
-    }
-
-    return toDelete.length;
-  }
-
-  /**
-   * Return the set of chunk hashes that are already stored in the collection.
-   * Used to skip re-uploading unchanged chunks (idempotent upsert by hash).
-   */
-  private async getExistingHashes(hashes: string[]): Promise<Set<string>> {
-    if (hashes.length === 0) return new Set();
-
-    const result = await this.client.scroll(this.collectionName, {
-      filter: {
-        must: [{ key: 'hash', match: { any: hashes } }],
-      },
-      with_payload: ['hash'],
-      limit: hashes.length,
-    });
-
-    const found = new Set<string>();
-    for (const point of result.points) {
-      const hash = point.payload?.['hash'];
-      if (typeof hash === 'string') {
-        found.add(hash);
-      }
-    }
     return found;
   }
 }

@@ -35,8 +35,16 @@ export function buildQdrantFilter(
         // Any-of match
         must.push({ key, match: { any: v['any'] as (string | number)[] } });
       } else if ('value' in v) {
-        // Explicit value wrapper
-        must.push({ key, match: { value: v['value'] as string | number | boolean } });
+        // Explicit value wrapper — only emit for supported primitive types;
+        // ignore unsupported shapes to avoid invalid Qdrant filter conditions.
+        const val = v['value'];
+        if (
+          typeof val === 'string' ||
+          typeof val === 'number' ||
+          typeof val === 'boolean'
+        ) {
+          must.push({ key, match: { value: val } });
+        }
       } else if ('gt' in v || 'gte' in v || 'lt' in v || 'lte' in v) {
         // Range match — only include defined bounds
         const range: { gt?: number; gte?: number; lt?: number; lte?: number } = {};
