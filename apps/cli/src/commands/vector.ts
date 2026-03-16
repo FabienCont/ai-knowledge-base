@@ -1,10 +1,20 @@
 import type { Command } from 'commander';
 import { getConfig } from '@aikb/core-config';
 import { scanFolder } from '@aikb/core-fs-scan';
+import type { FileEntry } from '@aikb/core-types';
 import { loadAndChunk } from '@aikb/core-chunking';
 import { createVectorStore } from '@aikb/vector-store';
 import { output, exitError } from '../output.js';
 import { createProgressBar } from '../progress.js';
+
+/** Parse a positive integer option and exit with an error if invalid. */
+function parsePositiveInt(value: string, name: string): number {
+  const n = parseInt(value, 10);
+  if (Number.isNaN(n) || !Number.isFinite(n) || n <= 0) {
+    exitError(`--${name} must be a positive integer, got: ${JSON.stringify(value)}`);
+  }
+  return n;
+}
 
 export function registerVectorCommands(program: Command): void {
   const vector = program
@@ -29,24 +39,20 @@ export function registerVectorCommands(program: Command): void {
         dryRun?: boolean;
       }) => {
         try {
+          const batchSize = parsePositiveInt(opts.batchSize, 'batch-size');
           const config = await getConfig();
 
           if (opts.collection) {
             config.vector.collection_name = opts.collection;
           }
 
-          const batchSize = parseInt(opts.batchSize, 10);
-          const { createEmbeddingProvider } = await import('@aikb/core-embeddings');
-          const embeddingProvider = createEmbeddingProvider(config.embedding);
-          const store = await createVectorStore();
-
-          // Collect files first to know total for progress bar
-          const files: string[] = [];
+          // Collect all FileEntry objects once (used for count + ingestion)
+          const entries: FileEntry[] = [];
           for await (const entry of scanFolder({ root: opts.root })) {
-            files.push(entry.path);
+            entries.push(entry);
           }
 
-          if (files.length === 0) {
+          if (entries.length === 0) {
             output(program, { inserted: 0, skipped: 0, files: 0 }, 'No files found.');
             return;
           }
@@ -54,23 +60,27 @@ export function registerVectorCommands(program: Command): void {
           if (opts.dryRun) {
             output(
               program,
-              { files: files.length, dryRun: true },
-              `[dry-run] Would ingest ${files.length} file(s) from ${opts.root}`,
+              { files: entries.length, dryRun: true },
+              `[dry-run] Would ingest ${entries.length} file(s) from ${opts.root}`,
             );
             return;
           }
+
+          const { createEmbeddingProvider } = await import('@aikb/core-embeddings');
+          const embeddingProvider = createEmbeddingProvider(config.embedding);
+          const store = await createVectorStore();
 
           // Ensure collection exists (get dimensions from a test embed)
           const testVec = await embeddingProvider.embed('hello');
           await store.ensureCollection(testVec.length);
 
           const isJson = program.opts<{ json?: boolean }>().json === true;
-          const bar = isJson ? null : createProgressBar({ total: files.length, label: 'Ingesting' });
+          const bar = isJson ? null : createProgressBar({ total: entries.length, label: 'Ingesting' });
 
           let totalInserted = 0;
           let totalSkipped = 0;
 
-          for await (const entry of scanFolder({ root: opts.root })) {
+          for (const entry of entries) {
             try {
               const result = await loadAndChunk(entry);
               const chunks = result.chunks;
@@ -95,14 +105,14 @@ export function registerVectorCommands(program: Command): void {
           bar?.stop();
 
           const summary = {
-            files: files.length,
+            files: entries.length,
             inserted: totalInserted,
             skipped: totalSkipped,
           };
           output(
             program,
             summary,
-            `Ingested ${files.length} file(s): ${totalInserted} chunks inserted, ${totalSkipped} skipped`,
+            `Ingested ${entries.length} file(s): ${totalInserted} chunks inserted, ${totalSkipped} skipped`,
           );
         } catch (err) {
           exitError(err instanceof Error ? err.message : String(err));
@@ -120,6 +130,7 @@ export function registerVectorCommands(program: Command): void {
     .option('--collection <name>', 'Collection name (overrides config)')
     .action(async (text: string, opts: { topK: string; collection?: string }) => {
       try {
+        const topK = parsePositiveInt(opts.topK, 'top-k');
         const config = await getConfig();
 
         if (opts.collection) {
@@ -129,7 +140,6 @@ export function registerVectorCommands(program: Command): void {
         const { createEmbeddingProvider } = await import('@aikb/core-embeddings');
         const embeddingProvider = createEmbeddingProvider(config.embedding);
         const store = await createVectorStore();
-        const topK = parseInt(opts.topK, 10);
 
         const result = await store.query({ text, top_k: topK }, embeddingProvider);
 

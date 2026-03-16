@@ -14,13 +14,13 @@ export function registerSessionCommands(program: Command): void {
     .command('start')
     .description('Create a new session')
     .option('--title <title>', 'Session title')
-    .option('--tag <tag...>', 'Session tags (repeatable)')
-    .action(async (opts: { title?: string; tag?: string[] }) => {
+    .option('--tag <tag>', 'Session tag (can be repeated: --tag a --tag b)', (val: string, acc: string[]) => [...acc, val], [] as string[])
+    .action(async (opts: { title?: string; tag: string[] }) => {
       try {
         const store = await createSessionStore();
         const meta = await store.create({
           ...(opts.title !== undefined ? { title: opts.title } : {}),
-          ...(opts.tag !== undefined ? { tags: opts.tag } : {}),
+          ...(opts.tag.length > 0 ? { tags: opts.tag } : {}),
         });
         output(program, meta, `Created session: ${meta.id}`);
       } catch (err) {

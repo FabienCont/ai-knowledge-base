@@ -3,7 +3,7 @@ import type { Command } from 'commander';
 
 /**
  * Output a result to stdout.
- * When `--json` flag is set, prints compact JSON.
+ * When `--json` flag is set, prints pretty-printed JSON.
  * Otherwise prints the human-readable message.
  */
 export function output<T>(program: Command, data: T, humanMessage: string): void {

@@ -1,4 +1,4 @@
-import { readFile, access } from 'node:fs/promises';
+import { readFile, access, constants as fsConstants } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { ConfigError } from './errors.js';
@@ -47,10 +47,18 @@ export async function loadFromFile(configPath?: string): Promise<Partial<AppConf
       } else {
         // JS / ESM dynamic import — check existence first to avoid confusing errors
         try {
-          await access(resolvedPath);
-        } catch {
-          // File does not exist — try next candidate
-          continue;
+          await access(resolvedPath, fsConstants.F_OK);
+        } catch (accessErr) {
+          const code = (accessErr as NodeJS.ErrnoException).code;
+          if (code === 'ENOENT' || code === 'ENOTDIR') {
+            // File does not exist — try next candidate
+            continue;
+          }
+          // Any other error (e.g. EACCES) is a real problem — report it
+          throw new ConfigError(
+            `Cannot access config file "${resolvedPath}": ${String(accessErr)}`,
+            accessErr,
+          );
         }
         const fileUrl = pathToFileURL(resolvedPath).href;
         try {

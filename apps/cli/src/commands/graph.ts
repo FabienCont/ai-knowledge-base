@@ -3,9 +3,23 @@ import { getConfig } from '@aikb/core-config';
 import type { LLMConfig } from '@aikb/core-config';
 import { createGraphStore, createExtractor, ingestChunks } from '@aikb/graph-store';
 import { scanFolder } from '@aikb/core-fs-scan';
+import type { FileEntry } from '@aikb/core-types';
 import { loadAndChunk } from '@aikb/core-chunking';
 import { output, exitError } from '../output.js';
 import { createProgressBar } from '../progress.js';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Parse a positive integer option and exit with an error if invalid. */
+function parsePositiveInt(value: string, name: string): number {
+  const n = parseInt(value, 10);
+  if (Number.isNaN(n) || !Number.isFinite(n) || n <= 0) {
+    exitError(`--${name} must be a positive integer, got: ${JSON.stringify(value)}`);
+  }
+  return n;
+}
 
 // ---------------------------------------------------------------------------
 // LLM helpers for graph ask
@@ -13,7 +27,7 @@ import { createProgressBar } from '../progress.js';
 
 /**
  * Use the configured LLM to translate a natural-language question into
- * a Cypher query.  Falls back to a simple MATCH+RETURN when the LLM
+ * a Cypher query.  Falls back to a broad MATCH+RETURN when the LLM
  * provider is not configured.
  */
 async function generateCypher(question: string, llm: LLMConfig): Promise<string> {
@@ -44,7 +58,13 @@ async function generateCypher(question: string, llm: LLMConfig): Promise<string>
       ],
     });
 
-    return resp.choices[0]?.message.content?.trim() ?? '';
+    const cypher = resp.choices[0]?.message.content?.trim() ?? '';
+
+    // Validate: Cypher must be non-empty and start with a known clause
+    const CYPHER_KEYWORDS = /^(MATCH|WITH|CALL|OPTIONAL\s+MATCH|MERGE|CREATE|UNWIND|RETURN)/i;
+    if (cypher.length > 0 && CYPHER_KEYWORDS.test(cypher)) {
+      return cypher;
+    }
   }
 
   // Fallback — broad search
@@ -118,16 +138,16 @@ export function registerGraphCommands(program: Command): void {
     .action(
       async (opts: { root: string; batchSize: string; dryRun?: boolean }) => {
         try {
+          const batchSize = parsePositiveInt(opts.batchSize, 'batch-size');
           const config = await getConfig();
-          const batchSize = parseInt(opts.batchSize, 10);
 
-          // Collect files first
-          const files: string[] = [];
+          // Collect all FileEntry objects once (used for count + ingestion)
+          const entries: FileEntry[] = [];
           for await (const entry of scanFolder({ root: opts.root })) {
-            files.push(entry.path);
+            entries.push(entry);
           }
 
-          if (files.length === 0) {
+          if (entries.length === 0) {
             output(program, { entities: 0, relations: 0, files: 0 }, 'No files found.');
             return;
           }
@@ -135,8 +155,8 @@ export function registerGraphCommands(program: Command): void {
           if (opts.dryRun) {
             output(
               program,
-              { files: files.length, dryRun: true },
-              `[dry-run] Would ingest ${files.length} file(s) from ${opts.root}`,
+              { files: entries.length, dryRun: true },
+              `[dry-run] Would ingest ${entries.length} file(s) from ${opts.root}`,
             );
             return;
           }
@@ -147,51 +167,55 @@ export function registerGraphCommands(program: Command): void {
           const extractor = await createExtractor();
 
           await store.connect();
-          await store.ensureSchema();
 
           const isJson = program.opts<{ json?: boolean }>().json === true;
-          const bar = isJson ? null : createProgressBar({ total: files.length, label: 'Ingesting' });
+          const bar = isJson ? null : createProgressBar({ total: entries.length, label: 'Ingesting' });
 
           let totalEntities = 0;
           let totalRelations = 0;
 
-          for await (const entry of scanFolder({ root: opts.root })) {
-            try {
-              const result = await loadAndChunk(entry);
-              const chunks = result.chunks;
+          try {
+            await store.ensureSchema();
 
-              for (let i = 0; i < chunks.length; i += batchSize) {
-                const batch = chunks.slice(i, i + batchSize);
-                const ingestResult = await ingestChunks(
-                  batch,
-                  store,
-                  extractor,
-                  embeddingProvider,
-                );
-                totalEntities += ingestResult.entities;
-                totalRelations += ingestResult.relations;
+            for (const entry of entries) {
+              try {
+                const result = await loadAndChunk(entry);
+                const chunks = result.chunks;
+
+                for (let i = 0; i < chunks.length; i += batchSize) {
+                  const batch = chunks.slice(i, i + batchSize);
+                  const ingestResult = await ingestChunks(
+                    batch,
+                    store,
+                    extractor,
+                    embeddingProvider,
+                  );
+                  totalEntities += ingestResult.entities;
+                  totalRelations += ingestResult.relations;
+                }
+              } catch (fileErr) {
+                // Skip unreadable or un-chunkable files
+                if (program.opts<{ debug?: boolean }>().debug) {
+                  console.error(`[debug] skipped ${entry.path}: ${fileErr instanceof Error ? fileErr.message : String(fileErr)}`);
+                }
               }
-            } catch (fileErr) {
-              // Skip unreadable or un-chunkable files
-              if (program.opts<{ debug?: boolean }>().debug) {
-                console.error(`[debug] skipped ${entry.path}: ${fileErr instanceof Error ? fileErr.message : String(fileErr)}`);
-              }
+              bar?.increment();
             }
-            bar?.increment();
+
+            bar?.stop();
+          } finally {
+            await store.close();
           }
 
-          bar?.stop();
-          await store.close();
-
           const summary = {
-            files: files.length,
+            files: entries.length,
             entities: totalEntities,
             relations: totalRelations,
           };
           output(
             program,
             summary,
-            `Ingested ${files.length} file(s): ${totalEntities} entities, ${totalRelations} relations`,
+            `Ingested ${entries.length} file(s): ${totalEntities} entities, ${totalRelations} relations`,
           );
         } catch (err) {
           exitError(err instanceof Error ? err.message : String(err));
@@ -210,8 +234,13 @@ export function registerGraphCommands(program: Command): void {
       try {
         const store = await createGraphStore();
         await store.connect();
-        const records = await store.queryCypher(opts.cypher);
-        await store.close();
+
+        let records: Record<string, unknown>[];
+        try {
+          records = await store.queryCypher(opts.cypher);
+        } finally {
+          await store.close();
+        }
 
         output(
           program,
@@ -238,11 +267,17 @@ export function registerGraphCommands(program: Command): void {
         const store = await createGraphStore();
         await store.connect();
 
-        const cypher = await generateCypher(opts.text, config.llm);
-        const records = await store.queryCypher(cypher);
-        const answer = await summarizeResults(opts.text, records, config.llm);
+        let cypher: string;
+        let records: Record<string, unknown>[];
+        let answer: string;
 
-        await store.close();
+        try {
+          cypher = await generateCypher(opts.text, config.llm);
+          records = await store.queryCypher(cypher);
+          answer = await summarizeResults(opts.text, records, config.llm);
+        } finally {
+          await store.close();
+        }
 
         output(program, { cypher, results: records, answer }, answer);
       } catch (err) {
@@ -260,8 +295,13 @@ export function registerGraphCommands(program: Command): void {
       try {
         const store = await createGraphStore();
         await store.connect();
-        const stats = await store.stats();
-        await store.close();
+
+        let stats: Awaited<ReturnType<typeof store.stats>>;
+        try {
+          stats = await store.stats();
+        } finally {
+          await store.close();
+        }
 
         output(
           program,

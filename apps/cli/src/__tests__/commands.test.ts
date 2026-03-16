@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import type { FileSessionStore } from '@aikb/session-memory';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -103,7 +104,7 @@ describe('models list', () => {
 });
 
 // ---------------------------------------------------------------------------
-// session commands (mock FileSessionStore)
+// session commands (FileSessionStore backed by a temp directory)
 // ---------------------------------------------------------------------------
 
 describe('session commands', () => {
@@ -111,7 +112,6 @@ describe('session commands', () => {
 
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aikb-cli-test-'));
-    // Reset module registry so session-memory re-reads config each test
     vi.resetModules();
   });
 
@@ -120,13 +120,26 @@ describe('session commands', () => {
     vi.restoreAllMocks();
   });
 
+  /**
+   * Build a mock of @aikb/session-memory that uses a real FileSessionStore
+   * pointed at tmpDir.  vi.doMock must be called BEFORE the module under
+   * test is imported so Vitest can swap the factory before execution.
+   */
+  function mockSessionMemory(dir: string): void {
+    vi.doMock('@aikb/session-memory', async () => {
+      const actual = await vi.importActual<{ FileSessionStore: typeof FileSessionStore }>(
+        '@aikb/session-memory',
+      );
+      const store = new actual.FileSessionStore(dir);
+      return {
+        ...actual,
+        createSessionStore: () => Promise.resolve(store),
+      };
+    });
+  }
+
   it('session start creates a session and prints its ID', async () => {
-    // Mock createSessionStore to use a local tmpDir-backed store
-    const { FileSessionStore } = await import('@aikb/session-memory');
-    vi.doMock('@aikb/session-memory', () => ({
-      createSessionStore: () => Promise.resolve(new FileSessionStore(tmpDir)),
-      FileSessionStore,
-    }));
+    mockSessionMemory(tmpDir);
 
     const { registerSessionCommands } = await import('../commands/session.js');
     const prog = makeProgram();
@@ -139,12 +152,8 @@ describe('session commands', () => {
     expect(out).toMatch(/Created session: session-\d{8}-[0-9a-f]{6}/);
   });
 
-  it('session start --title sets the title and session metadata', async () => {
-    const { FileSessionStore } = await import('@aikb/session-memory');
-    vi.doMock('@aikb/session-memory', () => ({
-      createSessionStore: () => Promise.resolve(new FileSessionStore(tmpDir)),
-      FileSessionStore,
-    }));
+  it('session start --title sets the title', async () => {
+    mockSessionMemory(tmpDir);
 
     const { registerSessionCommands } = await import('../commands/session.js');
     const prog = makeProgram();
@@ -158,11 +167,7 @@ describe('session commands', () => {
   });
 
   it('session start --json emits valid JSON with session metadata', async () => {
-    const { FileSessionStore } = await import('@aikb/session-memory');
-    vi.doMock('@aikb/session-memory', () => ({
-      createSessionStore: () => Promise.resolve(new FileSessionStore(tmpDir)),
-      FileSessionStore,
-    }));
+    mockSessionMemory(tmpDir);
 
     const { registerSessionCommands } = await import('../commands/session.js');
     const prog = makeProgram();
@@ -178,11 +183,7 @@ describe('session commands', () => {
   });
 
   it('session list returns empty message when no sessions exist', async () => {
-    const { FileSessionStore } = await import('@aikb/session-memory');
-    vi.doMock('@aikb/session-memory', () => ({
-      createSessionStore: () => Promise.resolve(new FileSessionStore(tmpDir)),
-      FileSessionStore,
-    }));
+    mockSessionMemory(tmpDir);
 
     const { registerSessionCommands } = await import('../commands/session.js');
     const prog = makeProgram();
@@ -196,14 +197,14 @@ describe('session commands', () => {
   });
 
   it('session add appends a message and prints entry id', async () => {
-    const { FileSessionStore } = await import('@aikb/session-memory');
-    const store = new FileSessionStore(tmpDir);
-    const meta = await store.create({ id: 'test-session-add' });
+    // Create the session first using a real store, then swap in the mock
+    const { FileSessionStore: FSS } = await vi.importActual<{
+      FileSessionStore: typeof FileSessionStore;
+    }>('@aikb/session-memory');
+    const realStore = new FSS(tmpDir);
+    const meta = await realStore.create({ id: 'test-session-add' });
 
-    vi.doMock('@aikb/session-memory', () => ({
-      createSessionStore: () => Promise.resolve(new FileSessionStore(tmpDir)),
-      FileSessionStore,
-    }));
+    mockSessionMemory(tmpDir);
 
     const { registerSessionCommands } = await import('../commands/session.js');
     const prog = makeProgram();
@@ -221,19 +222,19 @@ describe('session commands', () => {
   });
 
   it('session search finds messages', async () => {
-    const { FileSessionStore } = await import('@aikb/session-memory');
-    const store = new FileSessionStore(tmpDir);
-    const meta = await store.create({ id: 'search-test' });
-    await store.add(meta.id, {
+    // Populate with a real store first, then hand off to the mock
+    const { FileSessionStore: FSS } = await vi.importActual<{
+      FileSessionStore: typeof FileSessionStore;
+    }>('@aikb/session-memory');
+    const realStore = new FSS(tmpDir);
+    const meta = await realStore.create({ id: 'search-test' });
+    await realStore.add(meta.id, {
       role: 'user',
       content: 'machine learning is cool',
       timestamp: new Date().toISOString(),
     });
 
-    vi.doMock('@aikb/session-memory', () => ({
-      createSessionStore: () => Promise.resolve(new FileSessionStore(tmpDir)),
-      FileSessionStore,
-    }));
+    mockSessionMemory(tmpDir);
 
     const { registerSessionCommands } = await import('../commands/session.js');
     const prog = makeProgram();
@@ -254,7 +255,6 @@ describe('session commands', () => {
 describe('config show', () => {
   it('prints config sections without secrets', async () => {
     vi.resetModules();
-    // Provide a minimal config via env vars
     process.env['AIKB_EMBEDDING_PROVIDER'] = 'local';
 
     const { registerConfigCommands } = await import('../commands/config.js');
@@ -265,7 +265,6 @@ describe('config show', () => {
       await prog.parseAsync(['node', 'aikb', 'config', 'show']);
     });
 
-    // Output should contain valid JSON config
     const parsed: unknown = JSON.parse(out);
     expect(parsed).toMatchObject({ embedding: expect.any(Object) as object });
     delete process.env['AIKB_EMBEDDING_PROVIDER'];
@@ -288,7 +287,7 @@ describe('config show', () => {
 });
 
 // ---------------------------------------------------------------------------
-// --json flag on vector ingest (mocked)
+// vector ingest (mocked)
 // ---------------------------------------------------------------------------
 
 describe('vector ingest (mocked)', () => {
@@ -306,7 +305,6 @@ describe('vector ingest (mocked)', () => {
   });
 
   it('dry-run reports file count without writing', async () => {
-    // Mock embedding provider and vector store
     vi.doMock('@aikb/core-embeddings', () => ({
       createEmbeddingProvider: () => ({
         embed: () => Promise.resolve(new Array(384).fill(0) as number[]),
@@ -316,13 +314,16 @@ describe('vector ingest (mocked)', () => {
     }));
 
     vi.doMock('@aikb/vector-store', () => ({
-      createVectorStore: () => Promise.resolve({
-        ensureCollection: () => Promise.resolve(),
-        upsert: () => Promise.resolve({ inserted: 0, updated: 0, skipped: 0 }),
-        query: () => Promise.resolve({ query: {} as unknown, items: [] as unknown[], duration_ms: 0 }),
-        status: () => Promise.resolve({ name: 'test', vectorCount: 0, status: 'green' as const, dimensions: 384 }),
-        deleteBySource: () => Promise.resolve(0),
-      }),
+      createVectorStore: () =>
+        Promise.resolve({
+          ensureCollection: () => Promise.resolve(),
+          upsert: () => Promise.resolve({ inserted: 0, updated: 0, skipped: 0 }),
+          query: () =>
+            Promise.resolve({ query: {}, items: [], duration_ms: 0 }),
+          status: () =>
+            Promise.resolve({ name: 'test', vectorCount: 0, status: 'green', dimensions: 384 }),
+          deleteBySource: () => Promise.resolve(0),
+        }),
     }));
 
     const { registerVectorCommands } = await import('../commands/vector.js');
@@ -341,5 +342,14 @@ describe('vector ingest (mocked)', () => {
     expect(out).toContain('dry-run');
     expect(out).toContain('1 file');
   });
-});
 
+  it('rejects invalid --batch-size', async () => {
+    const { registerVectorCommands } = await import('../commands/vector.js');
+    const prog = makeProgram();
+    registerVectorCommands(prog);
+
+    await expect(
+      prog.parseAsync(['node', 'aikb', 'vector', 'ingest', '--root', tmpDir, '--batch-size', '0']),
+    ).rejects.toThrow();
+  });
+});
