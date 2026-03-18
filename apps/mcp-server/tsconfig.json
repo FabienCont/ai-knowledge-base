@@ -1,9 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist"
+    "rootDir": ".",
+    "outDir": "dist",
+    "composite": false,
+    "incremental": false
   },
-  "include": ["src"],
+  "include": ["src", "tsup.config.ts"],
   "references": []
 }

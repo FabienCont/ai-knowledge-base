@@ -1,4 +1,4 @@
-# ⬜ Subplan K — MCP Server
+# ✅ Subplan K — MCP Server
 
 ## Overview
 
