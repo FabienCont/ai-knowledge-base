@@ -1,33 +1,12 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { QdrantVectorStore } from '@aikb/vector-store';
 import { createVectorStore } from '@aikb/vector-store';
 import { scanFolder } from '@aikb/core-fs-scan';
 import { loadAndChunk } from '@aikb/core-chunking';
 import { getConfig } from '@aikb/core-config';
 import type { FileEntry } from '@aikb/core-types';
-
-// ---------------------------------------------------------------------------
-// Error wrapper
-// ---------------------------------------------------------------------------
-
-type ToolContent = { type: 'text'; text: string };
-type ToolResult = { content: ToolContent[]; isError?: true };
-
-async function safeTool(fn: () => Promise<ToolResult>): Promise<ToolResult> {
-  try {
-    return await fn();
-  } catch (err) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Error: ${err instanceof Error ? err.message : String(err)}`,
-        },
-      ],
-      isError: true,
-    };
-  }
-}
+import { safeTool } from './safe-tool.js';
 
 // ---------------------------------------------------------------------------
 // Tool registration
@@ -48,9 +27,11 @@ export function registerVectorTools(server: McpServer): void {
       safeTool(async () => {
         const config = await getConfig();
 
-        if (collection !== undefined) {
-          config.vector.collection_name = collection;
-        }
+        // Use a copied config to avoid mutating the shared singleton when a
+        // collection override is requested.
+        const vectorConfig = collection !== undefined
+          ? { ...config.vector, collection_name: collection }
+          : config.vector;
 
         // Collect file entries
         const entries: FileEntry[] = [];
@@ -71,10 +52,11 @@ export function registerVectorTools(server: McpServer): void {
 
         const { createEmbeddingProvider } = await import('@aikb/core-embeddings');
         const embeddingProvider = createEmbeddingProvider(config.embedding);
-        const store = await createVectorStore();
+        const store = new QdrantVectorStore(vectorConfig);
 
-        const testVec = await embeddingProvider.embed('hello');
-        await store.ensureCollection(testVec.length);
+        // Determine embedding dimensions without a dummy embed call
+        await embeddingProvider.ensureModel();
+        await store.ensureCollection(embeddingProvider.dimensions);
 
         let totalInserted = 0;
         let totalSkipped = 0;
@@ -141,7 +123,9 @@ export function registerVectorTools(server: McpServer): void {
           {
             text,
             top_k,
-            ...(source_prefix !== undefined ? { source_prefix } : {}),
+            ...(source_prefix !== undefined
+              ? { filter: { source_path: { prefix: source_prefix } } }
+              : {}),
           },
           embeddingProvider,
         );

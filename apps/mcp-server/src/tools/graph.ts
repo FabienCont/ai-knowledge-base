@@ -6,29 +6,7 @@ import { loadAndChunk } from '@aikb/core-chunking';
 import { getConfig } from '@aikb/core-config';
 import type { LLMConfig } from '@aikb/core-config';
 import type { FileEntry } from '@aikb/core-types';
-
-// ---------------------------------------------------------------------------
-// Error wrapper
-// ---------------------------------------------------------------------------
-
-type ToolContent = { type: 'text'; text: string };
-type ToolResult = { content: ToolContent[]; isError?: true };
-
-async function safeTool(fn: () => Promise<ToolResult>): Promise<ToolResult> {
-  try {
-    return await fn();
-  } catch (err) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Error: ${err instanceof Error ? err.message : String(err)}`,
-        },
-      ],
-      isError: true,
-    };
-  }
-}
+import { safeTool } from './safe-tool.js';
 
 // ---------------------------------------------------------------------------
 // LLM helpers (reuse logic from CLI graph commands)

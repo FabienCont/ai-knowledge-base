@@ -31,9 +31,9 @@ async function main(): Promise<void> {
     const port = parseInt(process.env['AIKB_MCP_PORT'] ?? '3001', 10);
     // TODO: implement SSE transport via StreamableHTTPServerTransport (SDK ≥ 1.1)
     process.stderr.write(
-      `[aikb-mcp] SSE transport requested on port ${port} — not yet implemented\n`,
+      `[aikb-mcp] SSE transport on port ${port} is not yet implemented\n`,
     );
-    process.exit(0);
+    process.exit(1);
   } else {
     process.stderr.write(
       `[aikb-mcp] Unknown transport: ${transportType}. Use 'stdio' or 'sse'.\n`,

@@ -1,29 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { createSessionStore } from '@aikb/session-memory';
-
-// ---------------------------------------------------------------------------
-// Error wrapper — catches thrown errors and returns isError: true responses
-// ---------------------------------------------------------------------------
-
-type ToolContent = { type: 'text'; text: string };
-type ToolResult = { content: ToolContent[]; isError?: true };
-
-async function safeTool(fn: () => Promise<ToolResult>): Promise<ToolResult> {
-  try {
-    return await fn();
-  } catch (err) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Error: ${err instanceof Error ? err.message : String(err)}`,
-        },
-      ],
-      isError: true,
-    };
-  }
-}
+import { safeTool } from './safe-tool.js';
 
 // ---------------------------------------------------------------------------
 // Tool registration

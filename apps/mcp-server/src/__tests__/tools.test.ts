@@ -221,28 +221,34 @@ describe('vector tools (mocked store)', () => {
   function mockVectorDeps(tmpDir: string): void {
     vi.doMock('@aikb/core-embeddings', () => ({
       createEmbeddingProvider: () => ({
+        dimensions: TEST_EMBEDDING_DIM,
+        ensureModel: () => Promise.resolve(),
         embed: () => Promise.resolve(new Array(TEST_EMBEDDING_DIM).fill(0) as number[]),
         embedBatch: (texts: string[]) =>
           Promise.resolve(texts.map(() => new Array(TEST_EMBEDDING_DIM).fill(0) as number[])),
       }),
     }));
 
-    vi.doMock('@aikb/vector-store', () => ({
-      createVectorStore: () =>
+    const mockStoreInstance = {
+      ensureCollection: () => Promise.resolve(),
+      upsert: () => Promise.resolve({ inserted: 3, updated: 0, skipped: 0 }),
+      query: () =>
+        Promise.resolve({ query: {}, items: [], duration_ms: 0 }),
+      status: () =>
         Promise.resolve({
-          ensureCollection: () => Promise.resolve(),
-          upsert: () => Promise.resolve({ inserted: 3, updated: 0, skipped: 0 }),
-          query: () =>
-            Promise.resolve({ query: {}, items: [], duration_ms: 0 }),
-          status: () =>
-            Promise.resolve({
-              name: 'test-collection',
-              vectorCount: 42,
-              status: 'green',
-              dimensions: TEST_EMBEDDING_DIM,
-            }),
-          deleteBySource: () => Promise.resolve(0),
+          name: 'test-collection',
+          vectorCount: 42,
+          status: 'green',
+          dimensions: TEST_EMBEDDING_DIM,
         }),
+      deleteBySource: () => Promise.resolve(0),
+    };
+
+    vi.doMock('@aikb/vector-store', () => ({
+      // Used by vector_ingest (direct instantiation)
+      QdrantVectorStore: vi.fn().mockReturnValue(mockStoreInstance),
+      // Used by vector_query and vector_status (factory)
+      createVectorStore: () => Promise.resolve(mockStoreInstance),
     }));
 
     vi.doMock('@aikb/core-fs-scan', () => ({
@@ -269,6 +275,7 @@ describe('vector tools (mocked store)', () => {
 
   it('registers all 3 vector tools', async () => {
     vi.doMock('@aikb/vector-store', () => ({
+      QdrantVectorStore: vi.fn().mockReturnValue({}),
       createVectorStore: () => Promise.resolve({}),
     }));
     const { registerVectorTools } = await import('../tools/vector.js');
@@ -335,6 +342,7 @@ describe('vector tools (mocked store)', () => {
 
   it('vector_status returns isError:true on store failure', async () => {
     vi.doMock('@aikb/vector-store', () => ({
+      QdrantVectorStore: vi.fn().mockReturnValue({}),
       createVectorStore: () => Promise.reject(new Error('Qdrant unavailable')),
     }));
 
@@ -345,6 +353,103 @@ describe('vector tools (mocked store)', () => {
     const result = await server.call('vector_status', {});
     expect(result.isError).toBe(true);
     expect(result.content[0]?.text).toMatch(/Qdrant unavailable/);
+  });
+
+  it('vector_ingest honours collection override without mutating shared config', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aikb-mcp-vec4-'));
+    await fs.writeFile(path.join(tmpDir, 'file.txt'), 'Test content');
+
+    const qdrantCtorSpy = vi.fn().mockReturnValue({
+      ensureCollection: () => Promise.resolve(),
+      upsert: () => Promise.resolve({ inserted: 1, updated: 0, skipped: 0 }),
+    });
+
+    vi.doMock('@aikb/core-embeddings', () => ({
+      createEmbeddingProvider: () => ({
+        dimensions: TEST_EMBEDDING_DIM,
+        ensureModel: () => Promise.resolve(),
+        embedBatch: (texts: string[]) =>
+          Promise.resolve(texts.map(() => new Array(TEST_EMBEDDING_DIM).fill(0) as number[])),
+      }),
+    }));
+    vi.doMock('@aikb/vector-store', () => ({
+      QdrantVectorStore: qdrantCtorSpy,
+      createVectorStore: () => Promise.resolve({}),
+    }));
+    vi.doMock('@aikb/core-fs-scan', () => ({
+      scanFolder: function* () {
+        yield { path: path.join(tmpDir, 'file.txt'), name: 'file.txt', ext: '.txt', size: 10 };
+      },
+    }));
+    vi.doMock('@aikb/core-chunking', () => ({
+      loadAndChunk: () =>
+        Promise.resolve({
+          chunks: [
+            {
+              id: 'c1',
+              content: 'test',
+              source_path: path.join(tmpDir, 'file.txt'),
+              hash: 'h1',
+              strategy: 'fixed',
+            },
+          ],
+        }),
+    }));
+
+    const { registerVectorTools } = await import('../tools/vector.js');
+    const server = new StubMcpServer();
+    registerVectorTools(server as never);
+
+    await server.call('vector_ingest', { root: tmpDir, collection: 'my-custom-collection' });
+
+    // QdrantVectorStore should have been constructed with the overridden collection name
+    expect(qdrantCtorSpy).toHaveBeenCalledOnce();
+    expect(qdrantCtorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ collection_name: 'my-custom-collection' }),
+    );
+
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('vector_query passes source_prefix as a filter to store.query', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aikb-mcp-vec5-'));
+    const querySpy = vi.fn().mockResolvedValue({ query: {}, items: [], duration_ms: 0 });
+
+    vi.doMock('@aikb/core-embeddings', () => ({
+      createEmbeddingProvider: () => ({
+        dimensions: TEST_EMBEDDING_DIM,
+        ensureModel: () => Promise.resolve(),
+        embed: () => Promise.resolve(new Array(TEST_EMBEDDING_DIM).fill(0) as number[]),
+        embedBatch: (texts: string[]) =>
+          Promise.resolve(texts.map(() => new Array(TEST_EMBEDDING_DIM).fill(0) as number[])),
+      }),
+    }));
+    vi.doMock('@aikb/vector-store', () => ({
+      QdrantVectorStore: vi.fn().mockReturnValue({}),
+      createVectorStore: () =>
+        Promise.resolve({
+          query: querySpy,
+          status: () => Promise.resolve({}),
+        }),
+    }));
+
+    const { registerVectorTools } = await import('../tools/vector.js');
+    const server = new StubMcpServer();
+    registerVectorTools(server as never);
+
+    await server.call('vector_query', {
+      text: 'find docs',
+      top_k: 5,
+      source_prefix: 'src/',
+    });
+
+    expect(querySpy).toHaveBeenCalledOnce();
+    expect(querySpy).toHaveBeenCalledWith(
+      expect.objectContaining({ filter: { source_path: { prefix: 'src/' } } }),
+      expect.anything(),
+    );
+
+    await fs.rm(tmpDir, { recursive: true, force: true });
   });
 });
 
@@ -491,6 +596,52 @@ describe('graph tools (mocked store)', () => {
     expect(result.isError).toBe(true);
     expect(result.content[0]?.text).toMatch(/Neo4j unavailable/);
   });
+
+  it('graph_ask happy path: returns cypher, results, and answer', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aikb-mcp-graph3-'));
+    mockGraphDeps(tmpDir);
+
+    const { registerGraphTools } = await import('../tools/graph.js');
+    const server = new StubMcpServer();
+    registerGraphTools(server as never);
+
+    // With provider='none' (fallback Cypher) and no LLM configured, graph_ask
+    // uses the fallback query and returns serialised records.
+    const result = await server.call('graph_ask', {
+      text: 'Who are the entities?',
+    });
+    expect(result.isError).toBeUndefined();
+    const data = parseText(result) as {
+      cypher: string;
+      results: unknown[];
+      answer: string;
+    };
+    expect(typeof data.cypher).toBe('string');
+    expect(Array.isArray(data.results)).toBe(true);
+    expect(typeof data.answer).toBe('string');
+
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('graph_ask returns isError:true when store connection fails', async () => {
+    vi.doMock('@aikb/graph-store', () => ({
+      createGraphStore: () =>
+        Promise.resolve({
+          connect: () => Promise.reject(new Error('graph down')),
+          close: () => Promise.resolve(),
+        }),
+      createExtractor: () => Promise.resolve({}),
+      ingestChunks: () => Promise.resolve({}),
+    }));
+
+    const { registerGraphTools } = await import('../tools/graph.js');
+    const server = new StubMcpServer();
+    registerGraphTools(server as never);
+
+    const result = await server.call('graph_ask', { text: 'Who is Alice?' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0]?.text).toMatch(/graph down/);
+  });
 });
 
 // ===========================================================================
@@ -596,6 +747,7 @@ describe('all tools registered', () => {
       createSessionStore: () => Promise.resolve({}),
     }));
     vi.doMock('@aikb/vector-store', () => ({
+      QdrantVectorStore: vi.fn().mockReturnValue({}),
       createVectorStore: () => Promise.resolve({}),
     }));
     vi.doMock('@aikb/graph-store', () => ({
