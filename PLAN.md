@@ -150,7 +150,7 @@ Models are stored in `~/.cache/huggingface/hub/` (HF default). Progress bars sho
 | ✅ | I | Graph Store | Neo4j adapter + LLM entity/relation extraction | [subplan-i-graph-store.md](docs/plan/subplan-i-graph-store.md) | 2026-03-14 |
 | ✅ | J | CLI App | `aikb` CLI with all subcommands | [subplan-j-cli.md](docs/plan/subplan-j-cli.md) | 2026-03-14 |
 | ✅ | K | MCP Server | MCP server exposing all tools | [subplan-k-mcp-server.md](docs/plan/subplan-k-mcp-server.md) | 2026-03-17 |
-| ⬜ | L | Docker + Docs | docker-compose, getting started, architecture docs | [subplan-l-docker-integration-docs.md](docs/plan/subplan-l-docker-integration-docs.md) | |
+| ✅ | L | Docker + Docs | docker-compose, getting started, architecture docs | [subplan-l-docker-integration-docs.md](docs/plan/subplan-l-docker-integration-docs.md) | 2026-03-18 |
 
 ---
 
