@@ -21,7 +21,7 @@
    ┌─────▼──────┐ ┌────▼──────┐  ┌───────▼──────┐
    │  Session   │ │  Vector   │  │    Graph     │
    │  Memory    │ │  Store    │  │    Store     │
-   │  (pkg/     │ │  (pkg/    │  │  (pkg/       │
+   │(packages/  │ │(packages/ │  │(packages/    │
    │  session-  │ │  vector-  │  │  graph-      │
    │  memory)   │ │  store)   │  │  store)      │
    └─────┬──────┘ └────┬──────┘  └───────┬──────┘
@@ -29,7 +29,7 @@
          │      ┌──────▼──────┐   ┌───────▼──────┐
   .aikb/ │      │   Qdrant    │   │    Neo4j     │
   files  │      │  (Docker)   │   │   (Docker)   │
-         │      └─────────────┘   └─────────────-┘
+         │      └─────────────┘   └──────────────┘
          │
     ┌────▼────────────────────────────────┐
     │           Shared Packages           │

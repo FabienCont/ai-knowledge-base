@@ -5,13 +5,14 @@
 - Node.js 20+
 - pnpm 8+
 - Docker & Docker Compose
+- [jq](https://jqlang.github.io/jq/) (for the session example)
 
 ## Quick Start
 
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/your-org/ai-knowledge-base.git
+git clone https://github.com/FabienCont/ai-knowledge-base.git
 cd ai-knowledge-base
 pnpm install
 ```
@@ -53,7 +54,7 @@ node apps/cli/dist/bin/aikb.js vector query "how does the embedding system work"
 ### 6. Start a memory session
 
 ```bash
-SESSION=$(node apps/cli/dist/bin/aikb.js session start --title "My first session" --json | jq -r '.id')
+SESSION=$(node apps/cli/dist/bin/aikb.js --json session start --title "My first session" | jq -r '.id')
 node apps/cli/dist/bin/aikb.js session add "$SESSION" --role user "What is the project about?"
 node apps/cli/dist/bin/aikb.js session show "$SESSION"
 ```

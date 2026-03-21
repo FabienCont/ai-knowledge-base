@@ -22,9 +22,9 @@
 
 ## Error Handling
 
-- All package-level errors extend a base `AikbError`
+- Each package defines its own error class extending `Error` (e.g. `ConfigError`, `VectorStoreError`)
 - Zod validation errors are wrapped with field-level messages
-- Never swallow errors silently — log and rethrow or return `Result<T, E>`
+- Never swallow errors silently — log and rethrow
 - Integration tests that require external services: tag with `@integration`
 
 ## Configuration
@@ -45,7 +45,7 @@ All environment variables:
 | `AIKB_LLM_MODEL` | `gpt-4o-mini` | LLM model |
 | `AIKB_DATA_DIR` | `.aikb` | Root data directory |
 | `AIKB_LOG_LEVEL` | `info` | `debug` \| `info` \| `warn` \| `error` |
-| `AIKB_MCP_TRANSPORT` | `stdio` | `stdio` \| `sse` |
+| `AIKB_MCP_TRANSPORT` | `stdio` | `stdio` only (`sse` is not yet implemented) |
 | `AIKB_MCP_PORT` | `3001` | Port for SSE transport |
 
 ## Testing

@@ -10,7 +10,7 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
     environment:
-      QDRANT__SERVICE__API_KEY: ""
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:-}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
       interval: 10s
@@ -28,12 +28,12 @@ services:
       - neo4j_data:/data
       - neo4j_logs:/logs
     environment:
-      NEO4J_AUTH: neo4j/password
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-password}
       NEO4J_PLUGINS: '["apoc"]'
       NEO4J_dbms_memory_pagecache_size: 512M
       NEO4J_dbms_memory_heap_max__size: 512M
     healthcheck:
-      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "password", "RETURN 1"]
+      test: ["CMD-SHELL", "cypher-shell -u ${NEO4J_USER:-neo4j} -p ${NEO4J_PASSWORD:-password} 'RETURN 1'"]
       interval: 15s
       timeout: 10s
       retries: 10
