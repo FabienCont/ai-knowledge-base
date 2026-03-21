@@ -1,4 +1,4 @@
-# ⬜ Subplan L — Docker + Integration + Docs
+# ✅ Subplan L — Docker + Integration + Docs
 
 ## Overview
 
@@ -18,7 +18,7 @@ Wire everything together with a single `docker compose up -d` that starts all in
 
 ## Detailed Tasks
 
-### L1 ⬜ Docker Compose file
+### L1 ✅ Docker Compose file
 
 Create `docker/docker-compose.yml` (or update if created by Subplans H/I):
 
@@ -81,7 +81,7 @@ QDRANT_API_KEY=
 NEO4J_AUTH=neo4j/password
 ```
 
-### L2 ⬜ Getting started documentation
+### L2 ✅ Getting started documentation
 
 Create `docs/getting-started.md`:
 
@@ -195,7 +195,7 @@ Add to `~/.config/claude/claude_desktop_config.json`:
 ```
 ```
 
-### L3 ⬜ Architecture diagram
+### L3 ✅ Architecture diagram
 
 Create `docs/architecture.md`:
 
@@ -290,7 +290,7 @@ Neo4j DB ✓
 ```
 ```
 
-### L4 ⬜ Conventions reference
+### L4 ✅ Conventions reference
 
 Create `docs/CONVENTIONS.md`:
 
@@ -360,7 +360,7 @@ All environment variables:
 - No direct pushes to `main`
 ```
 
-### L5 ⬜ End-to-end smoke test script
+### L5 ✅ End-to-end smoke test script
 
 Create `scripts/smoke-test.sh`:
 
@@ -397,7 +397,7 @@ echo ""
 echo "=== Smoke test passed! ==="
 ```
 
-### L6 ⬜ README update
+### L6 ✅ README update
 
 Update the root `README.md` to include:
 - Project description
@@ -444,14 +444,14 @@ README.md  (updated)
 
 ## Acceptance Criteria
 
-- [ ] `docker compose -f docker/docker-compose.yml up -d` starts both services
-- [ ] Both services report healthy via their health checks
-- [ ] `pnpm -r build` completes successfully after infrastructure is up
-- [ ] `aikb vector ingest --root .` completes without errors
-- [ ] `aikb vector query "..."` returns results
-- [ ] `scripts/smoke-test.sh` passes end-to-end
-- [ ] `docs/getting-started.md` accurately describes the setup process
-- [ ] `docs/CONVENTIONS.md` lists all environment variables with defaults
+- [x] `docker compose -f docker/docker-compose.yml up -d` starts both services
+- [x] Both services report healthy via their health checks
+- [x] `pnpm -r build` completes successfully after infrastructure is up
+- [x] `aikb vector ingest --root .` completes without errors
+- [x] `aikb vector query "..."` returns results
+- [x] `scripts/smoke-test.sh` passes end-to-end
+- [x] `docs/getting-started.md` accurately describes the setup process
+- [x] `docs/CONVENTIONS.md` lists all environment variables with defaults
 
 ---
 
